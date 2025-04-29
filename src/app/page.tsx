@@ -39,8 +39,8 @@ function LandingPage() {
       {/* <MagneticCursor /> */}
       <SmoothCursor />
 
-      Hero Section - Using the new HeroV2 component
-      {/* <HeroV2 /> */}
+      {/* Hero Section - Using the new HeroV2 component */}
+      <HeroV2 />
 
       {/* About Us Section */}
       {/* <AboutSection /> */}
