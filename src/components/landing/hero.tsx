@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { HideAssistantOnHover } from "../providers/hide-assistant-on-hover"
@@ -19,7 +19,6 @@ export function HeroV2() {
     const y = useTransform(scrollYProgress, [0, 1], ["0%", "40%"])
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
     const mouseX = useMotionValue(0)
     const mouseY = useMotionValue(0)
 
@@ -36,7 +35,6 @@ export function HeroV2() {
             const x = (clientX / windowWidth - 0.5) * 2 // -1 to 1
             const y = (clientY / windowHeight - 0.5) * 2 // -1 to 1
 
-            setMousePosition({ x, y })
             mouseX.set(x)
             mouseY.set(y)
         }

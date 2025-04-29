@@ -1,39 +1,30 @@
 "use client"
 
-import { useRef } from "react"
-import { motion, useScroll } from "motion/react"
+import { motion, } from "motion/react"
 import { Github, Instagram, Linkedin, Twitter } from "lucide-react"
-import { Button } from "@/components/ui/button"
 // import { ProjectCard } from "@/components/project-card"
-import { SmoothScrollProvider, useSmoothScroll } from "@/components/providers/smooth-scroll-provider"
 import { AssistantBotProvider } from "@/components/providers/assistant-bot-context"
 import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover"
 import { SmoothCursor } from "@/components/core/smooth-cursor"
-// import { FounderSection } from "@/components/landing/founder-section"
-// import { TeamSection } from "@/components/landing/team-section"
-// import { AboutSection } from "@/components/landing/about-section"
+import { FounderSection } from "@/components/landing/founder-section"
+import { TeamSection } from "@/components/landing/team-section"
+import { AboutSection } from "@/components/landing/about-section"
 // import { MentorshipSection } from "@/components/mentorship-section"
 // import { JoinSection } from "@/components/join-section"
 // import { FeaturedReviews } from "@/components/featured-reviews"
 import { HeroV2 } from "@/components/landing/hero"
-import { MagneticCursor } from "@/components/core/magnetic-cursor"
 import Link from "next/link"
 import Image from "next/image"
 
 export default function Home() {
   return (
     <AssistantBotProvider>
-      <SmoothScrollProvider>
-        <LandingPage />
-      </SmoothScrollProvider>
+      <LandingPage />
     </AssistantBotProvider>
   )
 }
 
 function LandingPage() {
-  const { scrollYProgress } = useScroll()
-
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* <MagneticCursor /> */}
@@ -43,17 +34,17 @@ function LandingPage() {
       <HeroV2 />
 
       {/* About Us Section */}
-      {/* <AboutSection /> */}
+      <AboutSection />
 
       {/* Founder Section */}
-      {/* <section id="founder" className="relative min-h-screen">
+      <section id="founder" className="relative min-h-screen">
         <FounderSection />
-      </section> */}
+      </section>
 
       {/* Team Section */}
-      {/* <section id="team" className="relative min-h-screen">
+      <section id="team" className="relative min-h-screen">
         <TeamSection />
-      </section> */}
+      </section>
 
 
       {/* Footer */}
