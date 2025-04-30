@@ -1,0 +1,28 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+
+  "javascript": {
+    "globals": ["Liveblocks"]
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "ignore": ["src/components/ui/**", "src/lib/**", "src/hooks/**"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "tab"
+  },
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noAssignInExpressions": "off"
+      }
+    }
+  }
+}
