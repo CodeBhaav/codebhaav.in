@@ -14,6 +14,8 @@ import { useEffect, useRef } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { HideAssistantOnHover } from "../providers/hide-assistant-on-hover";
+import { AuroraText } from "../magicui/aurora-text";
+import { LineShadowText } from "../magicui/line-shadow-text";
 
 export function HeroV2() {
 	const targetRef = useRef<HTMLDivElement>(null);
@@ -198,9 +200,16 @@ const journey = async () => {
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ duration: 0.8, delay: 0.2 }}
 						>
-							Code with <span className="text-cyan-400">Bhaav</span>.
+							Code with{" "}
+							<LineShadowText
+								className="text-balance text-4xl font-semibold leading-none tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl text-cyan-400 italic"
+								shadowColor="white"
+							>
+								Bhaav
+							</LineShadowText>
+							.
 							<br />
-							Build with <span className="text-purple-400">Purpose</span>.
+							Build with <AuroraText>Purpose</AuroraText>.
 						</motion.h1>
 
 						<motion.p

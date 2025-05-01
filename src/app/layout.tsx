@@ -4,6 +4,14 @@ import "@/app/globals.css";
 import { SiteHeader } from "@/components/core/site-header";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import type { Metadata } from "next";
+import Footer from "@/components/core/footer";
+import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({
+	subsets: ["latin"],
+	variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
 	title: "CodeBhaav - Student-led Tech Community",
@@ -17,7 +25,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning className="dark">
+		<html
+			lang="en"
+			suppressHydrationWarning
+			className={cn(inter.variable, "dark")}
+		>
 			<body>
 				{/* <AssistantBotProvider> */}
 				<ThemeProvider
@@ -31,6 +43,8 @@ export default function RootLayout({
 						<SiteHeader />
 					</div>
 					{children}
+					{/* Footer */}
+					<Footer />
 				</ThemeProvider>
 				{/* </AssistantBotProvider> */}
 			</body>

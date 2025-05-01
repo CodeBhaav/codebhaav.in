@@ -3,11 +3,7 @@
 import type React from "react";
 
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
-import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
 	CheckCircle2,
 	Github,
@@ -21,50 +17,50 @@ import { motion, useInView } from "motion/react";
 import { useRef, useState } from "react";
 
 export default function ContactPage() {
-	const [formState, setFormState] = useState({
-		name: "",
-		email: "",
-		subject: "",
-		message: "",
-	});
+	// const [formState, setFormState] = useState({
+	// 	name: "",
+	// 	email: "",
+	// 	subject: "",
+	// 	message: "",
+	// });
 
-	const [isSubmitted, setIsSubmitted] = useState(false);
-	const formRef = useRef(null);
-	const isInView = useInView(formRef, { once: true, margin: "-100px" });
+	// const [isSubmitted, setIsSubmitted] = useState(false);
+	// const formRef = useRef(null);
+	// const isInView = useInView(formRef, { once: true, margin: "-100px" });
 
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		const { name, value } = e.target;
-		setFormState((prev) => ({
-			...prev,
-			[name]: value,
-		}));
-	};
+	// const handleChange = (
+	// 	e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+	// ) => {
+	// 	const { name, value } = e.target;
+	// 	setFormState((prev) => ({
+	// 		...prev,
+	// 		[name]: value,
+	// 	}));
+	// };
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		// Here you would send the form data to your backend
-		console.log(formState);
-		// Simulate submission
-		setTimeout(() => {
-			setIsSubmitted(true);
-		}, 1000);
-	};
+	// const handleSubmit = (e: React.FormEvent) => {
+	// 	e.preventDefault();
+	// 	// Here you would send the form data to your backend
+	// 	console.log(formState);
+	// 	// Simulate submission
+	// 	setTimeout(() => {
+	// 		setIsSubmitted(true);
+	// 	}, 1000);
+	// };
 
 	const contactInfo = [
 		{
 			icon: <Mail className="w-5 h-5 text-primary" />,
 			title: "Email",
-			details: "hello@codebhaav.org",
+			details: "pranav@codebhaav.in",
 			link: "mailto:hello@codebhaav.org",
 		},
-		{
-			icon: <MessageSquare className="w-5 h-5 text-primary" />,
-			title: "Discord",
-			details: "Join our Discord server",
-			link: "#",
-		},
+		// {
+		// 	icon: <MessageSquare className="w-5 h-5 text-primary" />,
+		// 	title: "Discord",
+		// 	details: "Join our Discord server",
+		// 	link: "#",
+		// },
 		{
 			icon: <MapPin className="w-5 h-5 text-primary" />,
 			title: "Location",
@@ -79,14 +75,10 @@ export default function ContactPage() {
 			link: "https://github.com/codebhaav",
 			name: "GitHub",
 		},
-		{
-			icon: <Twitter className="w-5 h-5" />,
-			link: "#",
-			name: "Twitter",
-		},
+
 		{
 			icon: <Instagram className="w-5 h-5" />,
-			link: "#",
+			link: "https://instagram.com/codebhaav",
 			name: "Instagram",
 		},
 	];
@@ -115,7 +107,8 @@ function sendMessage(name, email, subject, message) {
 			/>
 			<div className="container px-4 py-16 md:py-24">
 				<div className="max-w-6xl mx-auto">
-					<div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+					<div className="grid grid-cols-1  gap-12">
+						{/* lg:grid-cols-3 */}
 						<div className="lg:col-span-1">
 							<motion.div
 								initial={{ opacity: 0, y: 20 }}
@@ -186,7 +179,7 @@ function sendMessage(name, email, subject, message) {
 							</motion.div>
 						</div>
 
-						<div className="lg:col-span-2">
+						{/* <div className="lg:col-span-2">
 							{!isSubmitted ? (
 								<motion.div
 									ref={formRef}
@@ -335,7 +328,7 @@ function sendMessage(name, email, subject, message) {
 									</div>
 								</motion.div>
 							)}
-						</div>
+						</div> */}
 					</div>
 				</div>
 			</div>

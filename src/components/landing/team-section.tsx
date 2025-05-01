@@ -163,13 +163,6 @@ export function TeamSection() {
 										</p>
 										<div className="flex flex-wrap gap-4 justify-end">
 											<HideAssistantOnHover>
-												<Link href="/founding-member">
-													<Button className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600">
-														Become a Founding Member
-													</Button>
-												</Link>
-											</HideAssistantOnHover>
-											<HideAssistantOnHover>
 												<Link href="/mission">
 													<Button
 														variant="outline"

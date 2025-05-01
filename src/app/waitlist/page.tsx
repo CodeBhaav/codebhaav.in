@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, useInView } from "motion/react";
 import { ArrowRight, CheckCircle2, Users } from "lucide-react";
 import { useRef, useState } from "react";
+import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 
 export default function WaitlistPage() {
 	const [formState, setFormState] = useState({
@@ -88,7 +89,8 @@ export default function WaitlistPage() {
 
 	return (
 		<div className="min-h-screen">
-			<PageHeader
+			<PageHeaderMinimal
+				size="large"
 				title="Join the Waitlist"
 				description="Be among the first to join our community of self-taught developers."
 			/>

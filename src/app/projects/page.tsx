@@ -7,67 +7,20 @@ import { Input } from "@/components/ui/input";
 import { motion } from "motion/react";
 import { Search } from "lucide-react";
 import { useState } from "react";
+import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 
 // Project categories
 const categories = ["All", "Web", "Mobile", "AI", "Open Source", "Community"];
 
 // Sample projects data
-const projectsData = [
-	{
-		id: 1,
-		title: "CodeBhaav Website",
-		description:
-			"The official website for the CodeBhaav community, built with Next.js and Tailwind CSS.",
-		image: "/placeholder.svg?height=400&width=600&text=CodeBhaav+Website",
-		tags: ["Next.js", "Tailwind CSS", "TypeScript", "Web"],
-		category: "Web",
-	},
-	{
-		id: 2,
-		title: "Student Mentor Connect",
-		description:
-			"A platform connecting students with industry mentors for guidance and career advice.",
-		image: "/placeholder.svg?height=400&width=600&text=Mentor+Connect",
-		tags: ["React", "Node.js", "MongoDB", "Web"],
-		category: "Web",
-	},
-	{
-		id: 3,
-		title: "Campus Navigator",
-		description:
-			"A mobile app to help students navigate university campuses and find resources.",
-		image: "/placeholder.svg?height=400&width=600&text=Campus+Navigator",
-		tags: ["React Native", "Firebase", "Maps API", "Mobile"],
-		category: "Mobile",
-	},
-	{
-		id: 4,
-		title: "Study Buddy AI",
-		description:
-			"An AI-powered study assistant that helps students with homework and exam preparation.",
-		image: "/placeholder.svg?height=400&width=600&text=Study+Buddy+AI",
-		tags: ["Python", "TensorFlow", "NLP", "AI"],
-		category: "AI",
-	},
-	{
-		id: 5,
-		title: "Open Learning Repository",
-		description:
-			"A collaborative platform for sharing educational resources and learning materials.",
-		image: "/placeholder.svg?height=400&width=600&text=Open+Learning",
-		tags: ["Vue.js", "Express", "PostgreSQL", "Open Source"],
-		category: "Open Source",
-	},
-	{
-		id: 6,
-		title: "Tech Meetup Organizer",
-		description:
-			"A tool for organizing and managing community tech meetups and events.",
-		image: "/placeholder.svg?height=400&width=600&text=Meetup+Organizer",
-		tags: ["Svelte", "Supabase", "Community", "Web"],
-		category: "Community",
-	},
-];
+const projectsData: {
+	id: number;
+	title: string;
+	description: string;
+	image: string;
+	tags: string[];
+	category: string;
+}[] = [];
 
 export default function ProjectsPage() {
 	const [selectedCategory, setSelectedCategory] = useState("All");
@@ -85,15 +38,23 @@ export default function ProjectsPage() {
 			);
 		return matchesCategory && matchesSearch;
 	});
-
+	const projectsCodeSnippet = `// Our Projects
+function buildProject() {
+ const values = {
+ openSource: true,
+ withCommunity: true,
+ };
+ return createImpact(values);
+}`;
 	return (
 		<div className="min-h-screen bg-background">
-			<div className="container max-w-7xl mx-auto pt-24 px-4">
-				<PageHeader
-					title="Our Projects"
-					description="Explore the innovative projects created by the CodeBhaav community."
-				/>
-
+			<PageHeaderMinimal
+				title="Our Projects"
+				description="Explore the innovative projects created by the CodeBhaav community."
+				size="large"
+				codeSnippet={projectsCodeSnippet}
+			/>
+			<div className="container max-w-7xl mx-auto px-4">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}

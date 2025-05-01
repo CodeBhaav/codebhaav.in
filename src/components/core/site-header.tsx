@@ -92,7 +92,6 @@ export function SiteHeader() {
 		{ name: "Home", href: "/" },
 		{ name: "Mission", href: "/mission" },
 		{ name: "Projects", href: "/projects" },
-		{ name: "Blog", href: "/blog" },
 		{ name: "Contact", href: "/contact" },
 	];
 
@@ -108,7 +107,7 @@ export function SiteHeader() {
 				<div
 					className={`mx-auto max-w-7xl rounded-2xl transition-all duration-300 xl:px-0 border-none ${
 						hasScrolled
-							? "px-2 border border-zinc-800/40 backdrop-blur-lg bg-zinc-900/75 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+							? "px-2 border border-zinc-800/40 backdrop-blur-lg bg-gradient-to-br from-teal-500/5 to-emerald-500/5 shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
 							: "shadow-none px-7"
 					}`}
 				>

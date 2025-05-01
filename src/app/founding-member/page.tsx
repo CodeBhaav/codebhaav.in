@@ -12,6 +12,7 @@ import { motion, useInView } from "motion/react";
 import { CheckCircle2, Rocket, Shield, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 
 export default function FoundingMemberPage() {
 	const [formState, setFormState] = useState({
@@ -74,7 +75,8 @@ export default function FoundingMemberPage() {
 
 	return (
 		<div className="min-h-screen">
-			<PageHeader
+			<PageHeaderMinimal
+				size="large"
 				title="Become a Founding Member"
 				description="Help shape the future of CodeBhaav from the beginning"
 			/>
