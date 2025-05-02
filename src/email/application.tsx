@@ -28,7 +28,7 @@ const FoundingMemberEmail = ({ name }: FoundingMemberEmailProps) => (
 						src={`${baseUrl}/logo.webp`}
 						width="49"
 						height="21"
-						alt="CodeBhaav"
+						alt="CodeBhaav Logo"
 					/>
 					<Hr style={hr} />
 					<Text style={paragraph}>Thank You, {name}!</Text>

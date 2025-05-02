@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 	authors: [
 		{
 			name: "CodeBhaav",
-			url: "https://codebhaav.com",
+			url: "https://codebhaav.in",
 		},
 	],
 	creator: "CodeBhaav",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 		follow: true,
 	},
 	metadataBase: new URL(
-		process.env.NEXT_PUBLIC_BASE_URL || "https://codebhaav.com",
+		process.env.NEXT_PUBLIC_BASE_URL || "https://codebhaav.in",
 	),
 	appleWebApp: {
 		title: "CodeBhaav",

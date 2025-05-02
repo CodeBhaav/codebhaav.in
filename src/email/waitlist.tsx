@@ -17,11 +17,13 @@ const baseUrl = env.BASE_URL;
 interface WaitlistJoinEmailProps {
 	name: string;
 	referralPosition: number;
+	referralCode: string;
 }
 
 const WaitlistJoinEmail = ({
 	name,
 	referralPosition,
+	referralCode,
 }: WaitlistJoinEmailProps) => (
 	<Html>
 		<Head />
@@ -33,7 +35,7 @@ const WaitlistJoinEmail = ({
 						src={`${baseUrl}/logo.webp`}
 						width="49"
 						height="21"
-						alt="Stripe"
+						alt="CodeBhaav Logo"
 					/>
 					<Hr style={hr} />
 					<Text style={paragraph}>Welcome to CodeBhaav, {name}!</Text>
@@ -45,7 +47,10 @@ const WaitlistJoinEmail = ({
 						Share your referral link and climb up the list! The more friends you
 						refer, the sooner you get access.
 					</Text>
-					<Button style={button} href="https://codebhaav.com/share">
+					<Button
+						style={button}
+						href={`https://codebhaav.in/waitlist?ref=${referralCode}`}
+					>
 						Share your referral link
 					</Button>
 					<Hr style={hr} />
