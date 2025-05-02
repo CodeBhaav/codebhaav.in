@@ -61,7 +61,7 @@ export async function submitWaitlist(data: {
   });
   // Send email
   const res = await resend.emails.send({
-    from: "system@codebhaav.in",
+    from: "CodeBhaav <system@codebhaav.in>",
     replyTo: "pranav@codebhaav.in",
     to: [data.email],
     subject: "Welcome to the Waitlist!",

@@ -22,7 +22,7 @@ export async function submitFoundingMember(
     });
     // Send email using your email service
     await resend.emails.send({
-      from: "system@codebhaav.in",
+      from: "CodeBhaav <system@codebhaav.in>",
       replyTo: "pranav@codebhaav.in",
       to: [data.email],
       subject: "Welcome to the Waitlist!",
