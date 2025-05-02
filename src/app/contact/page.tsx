@@ -53,7 +53,7 @@ export default function ContactPage() {
 			icon: <Mail className="w-5 h-5 text-primary" />,
 			title: "Email",
 			details: "pranav@codebhaav.in",
-			link: "mailto:hello@codebhaav.org",
+			link: "mailto:pranav@codebhaav.org",
 		},
 		// {
 		// 	icon: <MessageSquare className="w-5 h-5 text-primary" />,

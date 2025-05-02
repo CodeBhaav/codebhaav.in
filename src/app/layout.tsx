@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import Footer from "@/components/core/footer";
 import { Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
 	subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
 						<SiteHeader />
 					</div>
 					{children}
+					<Toaster theme="dark" />
 					{/* Footer */}
 					<Footer />
 				</ThemeProvider>

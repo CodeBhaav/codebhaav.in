@@ -1,55 +1,78 @@
 "use client";
 
 import type React from "react";
-
-import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
-import { PageHeader } from "@/components/core/page-header";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useRef, useState } from "react";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import Link from "next/link";
 import { motion, useInView } from "motion/react";
 import { CheckCircle2, Rocket, Shield, Star, Users } from "lucide-react";
-import Link from "next/link";
-import { useRef, useState } from "react";
+
+import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
+import {
+	Form,
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { submitFoundingMember } from "../actions/waitlist/founding-member";
+
+// Define the validation schema
+export const foundingMemberSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	email: z.string().email("Please enter a valid email address"),
+	github: z.string().optional(),
+	linkedin: z.string().optional(),
+	portfolio: z.string().optional(),
+	skills: z.string().min(1, "Please describe your skills"),
+	experience: z.string().min(1, "Please describe your experience"),
+	motivation: z.string().min(1, "Please describe your motivation"),
+	commitment: z.string().min(1, "Please describe your commitment"),
+	ideas: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof foundingMemberSchema>;
 
 export default function FoundingMemberPage() {
-	const [formState, setFormState] = useState({
-		name: "",
-		email: "",
-		github: "",
-		linkedin: "",
-		portfolio: "",
-		skills: "",
-		experience: "",
-		motivation: "",
-		commitment: "",
-		ideas: "",
-	});
-
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const formRef = useRef(null);
 	const isInView = useInView(formRef, { once: true, margin: "-100px" });
 
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		const { name, value } = e.target;
-		setFormState((prev) => ({
-			...prev,
-			[name]: value,
-		}));
-	};
+	// Initialize the form
+	const form = useForm<FormValues>({
+		resolver: zodResolver(foundingMemberSchema),
+		defaultValues: {
+			name: "",
+			email: "",
+			github: "",
+			linkedin: "",
+			portfolio: "",
+			skills: "",
+			experience: "",
+			motivation: "",
+			commitment: "",
+			ideas: "",
+		},
+	});
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
+	const onSubmit = async (values: FormValues) => {
 		// Here you would send the form data to your backend
-		console.log(formState);
-		// Simulate submission
-		setTimeout(() => {
+		const { success, error } = await submitFoundingMember(values);
+		if (success) {
 			setIsSubmitted(true);
-		}, 1000);
+		} else {
+			form.setError("root", {
+				message: error,
+			});
+		}
 	};
 
 	const benefits = [
@@ -91,6 +114,13 @@ export default function FoundingMemberPage() {
 								transition={{ duration: 0.8 }}
 								className="sticky top-24"
 							>
+								{form.formState.errors.root && (
+									<div className="mb-4">
+										<p className="text-red-500 text-sm">
+											{form.formState.errors.root.message}
+										</p>
+									</div>
+								)}
 								<h2 className="text-2xl font-bold mb-6">
 									Why Become a Founding Member?
 								</h2>
@@ -182,208 +212,268 @@ export default function FoundingMemberPage() {
 											</div>
 										</div>
 
-										<form onSubmit={handleSubmit} className="space-y-8">
-											<div className="space-y-6">
-												<h3 className="text-xl font-semibold">
-													Personal Information
-												</h3>
+										<Form {...form}>
+											<form
+												onSubmit={form.handleSubmit(onSubmit)}
+												className="space-y-8"
+											>
+												<div className="space-y-6">
+													<h3 className="text-xl font-semibold">
+														Personal Information
+													</h3>
 
-												<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-													<div className="space-y-2">
-														<Label htmlFor="name" className="text-base">
-															Full Name
-														</Label>
-														<Input
-															id="name"
+													<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+														<FormField
+															control={form.control}
 															name="name"
-															placeholder="Your name"
-															value={formState.name}
-															onChange={handleChange}
-															required
-															className="bg-background/50 border-primary/20 h-12 text-base"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		Full Name
+																	</FormLabel>
+																	<FormControl>
+																		<Input
+																			placeholder="Your name"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
 														/>
-													</div>
 
-													<div className="space-y-2">
-														<Label htmlFor="email" className="text-base">
-															Email Address
-														</Label>
-														<Input
-															id="email"
+														<FormField
+															control={form.control}
 															name="email"
-															type="email"
-															placeholder="you@example.com"
-															value={formState.email}
-															onChange={handleChange}
-															required
-															className="bg-background/50 border-primary/20 h-12 text-base"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		Email Address
+																	</FormLabel>
+																	<FormControl>
+																		<Input
+																			type="email"
+																			placeholder="you@example.com"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
 														/>
 													</div>
-												</div>
 
-												<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-													<div className="space-y-2">
-														<Label htmlFor="github" className="text-base">
-															GitHub Profile (optional)
-														</Label>
-														<Input
-															id="github"
+													<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+														<FormField
+															control={form.control}
 															name="github"
-															placeholder="github.com/username"
-															value={formState.github}
-															onChange={handleChange}
-															className="bg-background/50 border-primary/20 h-12 text-base"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		GitHub Profile (optional)
+																	</FormLabel>
+																	<FormControl>
+																		<Input
+																			placeholder="github.com/username"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
 														/>
-													</div>
 
-													<div className="space-y-2">
-														<Label htmlFor="linkedin" className="text-base">
-															LinkedIn Profile (optional)
-														</Label>
-														<Input
-															id="linkedin"
+														<FormField
+															control={form.control}
 															name="linkedin"
-															placeholder="linkedin.com/in/username"
-															value={formState.linkedin}
-															onChange={handleChange}
-															className="bg-background/50 border-primary/20 h-12 text-base"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		LinkedIn Profile (optional)
+																	</FormLabel>
+																	<FormControl>
+																		<Input
+																			placeholder="linkedin.com/in/username"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
 														/>
-													</div>
 
-													<div className="space-y-2">
-														<Label htmlFor="portfolio" className="text-base">
-															Portfolio/Website (optional)
-														</Label>
-														<Input
-															id="portfolio"
+														<FormField
+															control={form.control}
 															name="portfolio"
-															placeholder="yourwebsite.com"
-															value={formState.portfolio}
-															onChange={handleChange}
-															className="bg-background/50 border-primary/20 h-12 text-base"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		Portfolio/Website (optional)
+																	</FormLabel>
+																	<FormControl>
+																		<Input
+																			placeholder="yourwebsite.com"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
 														/>
 													</div>
 												</div>
-											</div>
 
-											<div className="space-y-6">
-												<h3 className="text-xl font-semibold">
-													Skills & Experience
-												</h3>
+												<div className="space-y-6">
+													<h3 className="text-xl font-semibold">
+														Skills & Experience
+													</h3>
 
-												<div className="space-y-2">
-													<Label htmlFor="skills" className="text-base">
-														What skills can you contribute to the community?
-													</Label>
-													<Textarea
-														id="skills"
+													<FormField
+														control={form.control}
 														name="skills"
-														placeholder="E.g., web development, design, content creation, community building..."
-														value={formState.skills}
-														onChange={handleChange}
-														required
-														className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+														render={({ field }) => (
+															<FormItem className="space-y-2">
+																<FormLabel className="text-base">
+																	What skills can you contribute to the
+																	community?
+																</FormLabel>
+																<FormControl>
+																	<Textarea
+																		placeholder="E.g., web development, design, content creation, community building..."
+																		className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+																		{...field}
+																	/>
+																</FormControl>
+																<FormMessage />
+															</FormItem>
+														)}
 													/>
-												</div>
 
-												<div className="space-y-2">
-													<Label htmlFor="experience" className="text-base">
-														Briefly describe your relevant experience
-													</Label>
-													<Textarea
-														id="experience"
+													<FormField
+														control={form.control}
 														name="experience"
-														placeholder="Tell us about your background, projects, or any community involvement..."
-														value={formState.experience}
-														onChange={handleChange}
-														required
-														className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+														render={({ field }) => (
+															<FormItem className="space-y-2">
+																<FormLabel className="text-base">
+																	Briefly describe your relevant experience
+																</FormLabel>
+																<FormControl>
+																	<Textarea
+																		placeholder="Tell us about your background, projects, or any community involvement..."
+																		className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+																		{...field}
+																	/>
+																</FormControl>
+																<FormMessage />
+															</FormItem>
+														)}
 													/>
 												</div>
-											</div>
 
-											<div className="space-y-6">
-												<h3 className="text-xl font-semibold">
-													Motivation & Commitment
-												</h3>
+												<div className="space-y-6">
+													<h3 className="text-xl font-semibold">
+														Motivation & Commitment
+													</h3>
 
-												<div className="space-y-2">
-													<Label htmlFor="motivation" className="text-base">
-														Why do you want to be a founding member of
-														CodeBhaav?
-													</Label>
-													<Textarea
-														id="motivation"
+													<FormField
+														control={form.control}
 														name="motivation"
-														placeholder="What interests you about our mission and community?"
-														value={formState.motivation}
-														onChange={handleChange}
-														required
-														className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+														render={({ field }) => (
+															<FormItem className="space-y-2">
+																<FormLabel className="text-base">
+																	Why do you want to be a founding member of
+																	CodeBhaav?
+																</FormLabel>
+																<FormControl>
+																	<Textarea
+																		placeholder="What interests you about our mission and community?"
+																		className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+																		{...field}
+																	/>
+																</FormControl>
+																<FormMessage />
+															</FormItem>
+														)}
 													/>
-												</div>
 
-												<div className="space-y-2">
-													<Label htmlFor="commitment" className="text-base">
-														How much time can you commit to the community each
-														week?
-													</Label>
-													<Textarea
-														id="commitment"
+													<FormField
+														control={form.control}
 														name="commitment"
-														placeholder="Be honest about your availability and how you'd like to contribute..."
-														value={formState.commitment}
-														onChange={handleChange}
-														required
-														className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+														render={({ field }) => (
+															<FormItem className="space-y-2">
+																<FormLabel className="text-base">
+																	How much time can you commit to the community
+																	each week?
+																</FormLabel>
+																<FormControl>
+																	<Textarea
+																		placeholder="Be honest about your availability and how you'd like to contribute..."
+																		className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+																		{...field}
+																	/>
+																</FormControl>
+																<FormMessage />
+															</FormItem>
+														)}
 													/>
-												</div>
 
-												<div className="space-y-2">
-													<Label htmlFor="ideas" className="text-base">
-														Do you have any ideas or suggestions for the
-														community?
-													</Label>
-													<Textarea
-														id="ideas"
+													<FormField
+														control={form.control}
 														name="ideas"
-														placeholder="Share any thoughts on what you'd like to see or help build..."
-														value={formState.ideas}
-														onChange={handleChange}
-														className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+														render={({ field }) => (
+															<FormItem className="space-y-2">
+																<FormLabel className="text-base">
+																	Do you have any ideas or suggestions for the
+																	community?
+																</FormLabel>
+																<FormControl>
+																	<Textarea
+																		placeholder="Share any thoughts on what you'd like to see or help build..."
+																		className="min-h-[100px] bg-background/50 border-primary/20 text-base"
+																		{...field}
+																	/>
+																</FormControl>
+																<FormMessage />
+															</FormItem>
+														)}
 													/>
 												</div>
-											</div>
 
-											<div className="pt-4">
-												<p className="text-sm text-muted-foreground mb-6">
-													By submitting this form, you agree to our{" "}
-													<a
-														href="/terms"
-														className="text-primary hover:underline"
-													>
-														Terms of Service
-													</a>{" "}
-													and{" "}
-													<a
-														href="/privacy"
-														className="text-primary hover:underline"
-													>
-														Privacy Policy
-													</a>
-													.
-												</p>
+												<div className="pt-4">
+													<p className="text-sm text-muted-foreground mb-6">
+														By submitting this form, you agree to our{" "}
+														<a
+															href="/terms"
+															className="text-primary hover:underline"
+														>
+															Terms of Service
+														</a>{" "}
+														and{" "}
+														<a
+															href="/privacy"
+															className="text-primary hover:underline"
+														>
+															Privacy Policy
+														</a>
+														.
+													</p>
 
-												<HideAssistantOnHover>
-													<Button
-														type="submit"
-														className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 w-full md:w-auto px-8"
-													>
-														Submit Application
-													</Button>
-												</HideAssistantOnHover>
-											</div>
-										</form>
+													<HideAssistantOnHover>
+														<Button
+															type="submit"
+															className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 w-full md:w-auto px-8"
+														>
+															Submit Application
+														</Button>
+													</HideAssistantOnHover>
+												</div>
+											</form>
+										</Form>
 									</div>
 								</motion.div>
 							) : (
@@ -422,14 +512,14 @@ export default function FoundingMemberPage() {
 												</Button>
 											</HideAssistantOnHover>
 
-											<HideAssistantOnHover>
+											{/* <HideAssistantOnHover>
 												<Button
 													onClick={() => (window.location.href = "/blog")}
 													className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
 												>
 													Check Out Our Blog
 												</Button>
-											</HideAssistantOnHover>
+											</HideAssistantOnHover> */}
 										</div>
 									</div>
 								</motion.div>

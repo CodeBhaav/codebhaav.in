@@ -235,8 +235,10 @@ const journey = async () => {
 										size="lg"
 										className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 group"
 									>
-										Join the Community
-										<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+										Join the Waitlist
+										<span className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-2 ">
+											🚀
+										</span>
 									</Button>
 								</Link>
 							</HideAssistantOnHover>
