@@ -3,10 +3,10 @@
 import prisma from "@/lib/prisma"; // update the import path as needed
 import type { z } from "zod";
 import { revalidatePath } from "next/cache";
-import type { foundingMemberSchema } from "@/app/founding-member/page";
 import { Resend } from "resend";
 import FoundingMemberEmail from "@/email/application";
 import { env } from "@/env";
+import type { foundingMemberSchema } from "@/lib/schemas";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
