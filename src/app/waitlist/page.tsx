@@ -3,7 +3,6 @@
 import type React from "react";
 
 import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
-import { PageHeader } from "@/components/core/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
