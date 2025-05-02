@@ -17,7 +17,7 @@ import { HideAssistantOnHover } from "../providers/hide-assistant-on-hover";
 import { AuroraText } from "../magicui/aurora-text";
 import { LineShadowText } from "../magicui/line-shadow-text";
 
-export function HeroV2() {
+export function HeroV2({ waitlistCount }: { waitlistCount: number }) {
 	const targetRef = useRef<HTMLDivElement>(null);
 	const { scrollYProgress } = useScroll({
 		target: targetRef,
@@ -286,10 +286,13 @@ const journey = async () => {
 						transition={{ duration: 0.5, delay: 1.2 }}
 						className="flex justify-center mt-12"
 					>
-						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 text-sm text-zinc-400">
+						<Link
+							className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 text-sm text-zinc-400"
+							href="/waitlist"
+						>
 							<span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-							<span>42 members have already joined</span>
-						</div>
+							<span>{waitlistCount} people on the waitlist</span>
+						</Link>
 					</motion.div>
 				</div>
 			</motion.div>

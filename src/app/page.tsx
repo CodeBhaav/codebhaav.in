@@ -1,5 +1,3 @@
-"use client";
-
 import { SmoothCursor } from "@/components/core/smooth-cursor";
 import { AboutSection } from "@/components/landing/about-section";
 import { FounderSection } from "@/components/landing/founder-section";
@@ -10,11 +8,7 @@ import { HeroV2 } from "@/components/landing/hero";
 import { TeamSection } from "@/components/landing/team-section";
 // import { ProjectCard } from "@/components/project-card"
 import { AssistantBotProvider } from "@/components/providers/assistant-bot-context";
-import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
-import { Github, Instagram, Linkedin, Twitter } from "lucide-react";
-import { motion } from "motion/react";
-import Image from "next/image";
-import Link from "next/link";
+import prisma from "@/lib/prisma";
 
 export default function Home() {
 	return (
@@ -23,15 +17,17 @@ export default function Home() {
 		</AssistantBotProvider>
 	);
 }
+export const dynamic = "force-dynamic"; // Force dynamic rendering to always show the latest waitlist count
+export const revalidate = 0; // Disable revalidation for this page
 
-function LandingPage() {
+async function LandingPage() {
+	const waitlistCount = await prisma.waitlist.count();
 	return (
 		<div className="relative min-h-screen overflow-hidden">
-			{/* <MagneticCursor /> */}
 			<SmoothCursor />
 
 			{/* Hero Section - Using the new HeroV2 component */}
-			<HeroV2 />
+			<HeroV2 waitlistCount={waitlistCount} />
 
 			{/* About Us Section */}
 			<AboutSection />
