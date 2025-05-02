@@ -32,7 +32,7 @@ export function FounderSection() {
 					>
 						<div className="relative aspect-square overflow-hidden rounded-2xl">
 							<Image
-								src="/pranav.jpg"
+								src="/pranav.webp"
 								alt="Founder"
 								fill
 								className="object-cover"

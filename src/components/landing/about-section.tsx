@@ -49,7 +49,7 @@ export function AboutSection() {
 					>
 						<div className="relative aspect-square overflow-hidden rounded-2xl">
 							<Image
-								src="/about.jpg?height=800&width=800"
+								src="/about.webp?height=800&width=800"
 								alt="CodeBhaav Community"
 								fill
 								className="object-cover "

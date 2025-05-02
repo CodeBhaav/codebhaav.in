@@ -25,7 +25,7 @@ const FoundingMemberEmail = ({ name }: FoundingMemberEmailProps) => (
 			<Container style={container}>
 				<Section style={box}>
 					<Img
-						src={`${baseUrl}/logo.png`}
+						src={`${baseUrl}/logo.webp`}
 						width="49"
 						height="21"
 						alt="CodeBhaav"

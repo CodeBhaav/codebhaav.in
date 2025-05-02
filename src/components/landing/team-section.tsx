@@ -139,7 +139,7 @@ export function TeamSection() {
 							<div className="relative">
 								<div className="relative aspect-square  overflow-hidden rounded-2xl">
 									<Image
-										src="/team.jpeg?height=600&width=800"
+										src="/team.webp?height=600&width=800"
 										alt="Join Our Team"
 										fill
 										className="object-cover"
