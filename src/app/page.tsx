@@ -20,6 +20,7 @@ export default function Home() {
 		</AssistantBotProvider>
 	);
 }
+
 export const dynamic = "force-dynamic"; // Force dynamic rendering to always show the latest waitlist count
 export const revalidate = 0; // Disable revalidation for this page
 async function LandingPage() {
