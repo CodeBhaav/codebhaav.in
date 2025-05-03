@@ -4,6 +4,7 @@ import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-h
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function FounderSection() {
 	return (
@@ -78,8 +79,11 @@ export function FounderSection() {
 							</p>
 						</div>
 						<HideAssistantOnHover>
-							<Button className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600">
-								Join the Journey
+							<Button
+								asChild
+								className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+							>
+								<Link href="/waitlist">Join the Journey</Link>
 							</Button>
 						</HideAssistantOnHover>
 					</motion.div>
