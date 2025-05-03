@@ -2,9 +2,11 @@
 
 import WaitlistJoinEmail from "@/email/waitlist";
 import { env } from "@/env";
-import prisma from "@/lib/prisma";
+import { db } from "@/db";
+import { waitlist } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { Resend } from "resend";
+import { count, eq, lt, sql } from "drizzle-orm";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
@@ -21,16 +23,17 @@ export async function submitWaitlist(data: {
   referredBy?: string;
 }) {
   const referralCode = generateReferralCode();
-  const existingUser = await prisma.waitlist.findUnique({
-    where: { email: data.email },
+  const existingUser = await db.query.waitlist.findFirst({
+    where: (waitlist, { eq }) => eq(waitlist.email, data.email),
   });
   if (existingUser) {
     // Position
-    const position = await prisma.waitlist.count({
-      where: {
-        createdAt: { lt: existingUser.createdAt },
-      },
-    });
+    const position = await db
+      .select({ count: count() })
+      .from(waitlist)
+      .where(lt(waitlist.createdAt, existingUser.createdAt))
+      .execute()
+      .then((result) => result[0]?.count ?? 0);
     return {
       error: "User already exists",
       position: position + 1,
@@ -38,27 +41,32 @@ export async function submitWaitlist(data: {
     };
   }
   // Create user
-  const newUser = await prisma.waitlist.create({
-    data: {
-      ...data,
+  const newUser = await db
+    .insert(waitlist)
+    .values({
+      id: crypto.randomUUID(),
       referralCode,
-    },
-  });
+      updatedAt: new Date(),
+      ...data,
+    })
+    .returning();
 
   // Handle referral
   if (data.referredBy) {
-    await prisma.waitlist.updateMany({
-      where: { referralCode: data.referredBy },
-      data: { referralCount: { increment: 1 } },
-    });
+    await db
+      .update(waitlist)
+      .set({ referralCount: sql`${waitlist.referralCount} + 1` })
+      .where(eq(waitlist.referralCode, data.referredBy))
+      .execute();
   }
 
   // Position
-  const position = await prisma.waitlist.count({
-    where: {
-      createdAt: { lt: newUser.createdAt },
-    },
-  });
+  const position = await db
+    .select({ count: count() })
+    .from(waitlist)
+    .where(lt(waitlist.createdAt, newUser[0].createdAt))
+    .execute()
+    .then((result) => result[0]?.count ?? 0);
   // Send email
   const res = await resend.emails.send({
     from: "CodeBhaav <system@codebhaav.in>",
@@ -68,6 +76,7 @@ export async function submitWaitlist(data: {
     react: WaitlistJoinEmail({
       name: data.name,
       referralPosition: position + 1,
+      referralCode,
     }),
   });
 

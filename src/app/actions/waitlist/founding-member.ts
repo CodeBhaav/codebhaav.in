@@ -1,6 +1,7 @@
 "use server";
 
-import prisma from "@/lib/prisma"; // update the import path as needed
+import { db } from "@/db";
+import { foundingMember } from "@/db/schema";
 import type { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { Resend } from "resend";
@@ -14,12 +15,25 @@ export async function submitFoundingMember(
   data: z.infer<typeof foundingMemberSchema>
 ) {
   try {
-    await prisma.foundingMember.create({
-      data: {
-        ...data, // spread operator to include all fields
-        ideas: data.ideas || "",
-      },
+    const existingUser = await db.query.foundingMember.findFirst({
+      where: (foundingMember, { eq }) => eq(foundingMember.email, data.email),
     });
+    if (existingUser) {
+      return {
+        error: "You are already submitted the application",
+        success: false,
+      };
+    }
+    // Create user
+    await db
+      .insert(foundingMember)
+      .values({
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
+        ideas: data.ideas ?? "", // Provide a default value if undefined
+        ...data,
+      })
+      .returning();
     // Send email using your email service
     await resend.emails.send({
       from: "CodeBhaav <system@codebhaav.in>",

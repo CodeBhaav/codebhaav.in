@@ -7,7 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { motion, useInView } from "motion/react";
-import { CheckCircle2, Rocket, Shield, Star, Users } from "lucide-react";
+import {
+	CheckCircle2,
+	Loader,
+	Rocket,
+	Shield,
+	Star,
+	Users,
+} from "lucide-react";
 
 import { HideAssistantOnHover } from "@/components/providers/hide-assistant-on-hover";
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
@@ -25,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { submitFoundingMember } from "../actions/waitlist/founding-member";
 import { foundingMemberSchema } from "@/lib/schemas";
+import { PhoneInput } from "@/components/phone-input";
 
 type FormValues = z.infer<typeof foundingMemberSchema>;
 
@@ -39,6 +47,7 @@ export default function FoundingMemberPage() {
 		defaultValues: {
 			name: "",
 			email: "",
+			whatsapp: "",
 			github: "",
 			linkedin: "",
 			portfolio: "",
@@ -229,7 +238,26 @@ export default function FoundingMemberPage() {
 																</FormItem>
 															)}
 														/>
-
+														<FormField
+															control={form.control}
+															name="whatsapp"
+															render={({ field }) => (
+																<FormItem className="space-y-2">
+																	<FormLabel className="text-base">
+																		Email Address
+																	</FormLabel>
+																	<FormControl>
+																		<PhoneInput
+																			defaultCountry="IN"
+																			placeholder="Your WhatsApp number"
+																			className="bg-background/50 border-primary/20 h-12 text-base"
+																			{...field}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
+														/>
 														<FormField
 															control={form.control}
 															name="email"
@@ -453,8 +481,12 @@ export default function FoundingMemberPage() {
 													<HideAssistantOnHover>
 														<Button
 															type="submit"
+															disabled={form.formState.isSubmitting}
 															className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 w-full md:w-auto px-8"
 														>
+															{form.formState.isSubmitting && (
+																<Loader className="animate-spin mr-2 size-4" />
+															)}
 															Submit Application
 														</Button>
 													</HideAssistantOnHover>

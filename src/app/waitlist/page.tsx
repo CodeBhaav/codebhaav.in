@@ -1,7 +1,10 @@
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 import WaitlitForm from "./_form";
-import prisma from "@/lib/prisma";
+
 import type { Metadata } from "next";
+import { db } from "@/db";
+import { count, lt } from "drizzle-orm";
+import { waitlist } from "@/db/schema";
 
 export const dynamic = "force-dynamic"; // Force dynamic rendering to always show the latest waitlist count
 export const revalidate = 0; // Disable revalidation for this page
@@ -60,15 +63,22 @@ export default async function WaitlistPage({
 }) {
 	const { ref } = await searchParams;
 	if (ref) {
-		const existingUser = await prisma.waitlist.findUnique({
-			where: { referralCode: ref },
+		const existingUser = await db.query.waitlist.findFirst({
+			where: (waitlist, { eq }) => eq(waitlist.referralCode, ref),
+			columns: {
+				name: true,
+				email: true,
+				referralCode: true,
+				createdAt: true,
+			},
 		});
 		if (existingUser) {
-			const position = await prisma.waitlist.count({
-				where: {
-					createdAt: { lt: existingUser.createdAt },
-				},
-			});
+			const position = await db
+				.select({ count: count() })
+				.from(waitlist)
+				.where(lt(waitlist.createdAt, existingUser.createdAt))
+				.execute()
+				.then((result) => result[0]?.count ?? 0);
 			return (
 				<div className="min-h-screen">
 					<PageHeaderMinimal
@@ -120,7 +130,7 @@ export default async function WaitlistPage({
 		}
 	}
 	// If no referral code is provided or the code is invalid, show the default waitlist form
-	const waitlistCount = await prisma.waitlist.count();
+	const waitlistCount = await db.$count(waitlist);
 	return (
 		<div className="min-h-screen">
 			<PageHeaderMinimal

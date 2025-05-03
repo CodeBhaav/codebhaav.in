@@ -8,7 +8,8 @@ import { HeroV2 } from "@/components/landing/hero";
 import { TeamSection } from "@/components/landing/team-section";
 // import { ProjectCard } from "@/components/project-card"
 import { AssistantBotProvider } from "@/components/providers/assistant-bot-context";
-import prisma from "@/lib/prisma";
+import { db } from "@/db";
+import { waitlist } from "@/db/schema";
 
 export default function Home() {
 	return (
@@ -21,11 +22,11 @@ export const dynamic = "force-dynamic"; // Force dynamic rendering to always sho
 export const revalidate = 0; // Disable revalidation for this page
 
 async function LandingPage() {
-	const waitlistCount = await prisma.waitlist.count();
+	const waitlistCount = await db.$count(waitlist);
 	return (
 		<div className="relative min-h-screen overflow-hidden">
 			<SmoothCursor />
-
+			{waitlistCount}
 			{/* Hero Section - Using the new HeroV2 component */}
 			<HeroV2 waitlistCount={waitlistCount} />
 
