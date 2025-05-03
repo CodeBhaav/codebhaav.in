@@ -1,6 +1,6 @@
+export const runtime = "edge";
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 import WaitlitForm from "./_form";
-
 import type { Metadata } from "next";
 import { db } from "@/db";
 import { count, lt } from "drizzle-orm";

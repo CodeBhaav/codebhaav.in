@@ -1,14 +1,13 @@
 "use server";
 
 import WaitlistJoinEmail from "@/email/waitlist";
-import { env } from "@/env";
 import { db } from "@/db";
 import { waitlist } from "@/db/schema";
 import { revalidatePath } from "next/cache";
 import { Resend } from "resend";
 import { count, eq, lt, sql } from "drizzle-orm";
 
-const resend = new Resend(env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function submitWaitlist(data: {
   name: string;
@@ -44,7 +43,6 @@ export async function submitWaitlist(data: {
   const newUser = await db
     .insert(waitlist)
     .values({
-      id: crypto.randomUUID(),
       referralCode,
       updatedAt: new Date(),
       ...data,

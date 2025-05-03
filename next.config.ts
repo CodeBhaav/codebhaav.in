@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
-import { fileURLToPath } from "node:url";
+import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+
 import "./src/env.ts";
 const nextConfig: NextConfig = {
   /* config options here */
@@ -12,6 +13,9 @@ const nextConfig: NextConfig = {
     ],
   },
 };
+if (process.env.NODE_ENV === "development") {
+  await setupDevPlatform();
+}
 
 export default nextConfig;
 

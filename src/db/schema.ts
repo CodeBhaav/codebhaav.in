@@ -5,9 +5,10 @@ import {
   integer,
   text,
 } from "drizzle-orm/pg-core";
+import { cuid2 } from "drizzle-cuid2/postgres";
 
 export const waitlist = pgTable("waitlist", {
-  id: varchar("id").primaryKey().notNull(),
+  id: cuid2("id").defaultRandom().primaryKey(),
   name: varchar("name").notNull(),
   email: varchar("email").notNull().unique(),
   role: varchar("role").notNull(),
@@ -27,7 +28,7 @@ export const waitlist = pgTable("waitlist", {
 });
 
 export const foundingMember = pgTable("founding_member", {
-  id: varchar("id").primaryKey().notNull(),
+  id: cuid2("id").defaultRandom().primaryKey(),
   name: varchar("name").notNull(),
   email: varchar("email").notNull().unique(),
   github: varchar("github"),

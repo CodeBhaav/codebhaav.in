@@ -8,9 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "cf:build": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "preview": "npm run pages:build && wrangler pages dev",
+    "deploy": "npm run pages:build && wrangler pages deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -49,6 +49,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "dotenv": "^16.5.0",
+    "drizzle-cuid2": "^2.0.0",
     "drizzle-orm": "^0.43.1",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
@@ -75,6 +76,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
+    "@cloudflare/next-on-pages": "^1.13.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
