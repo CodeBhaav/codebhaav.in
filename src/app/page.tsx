@@ -1,3 +1,4 @@
+export const runtime = "edge";
 import { SmoothCursor } from "@/components/core/smooth-cursor";
 import { AboutSection } from "@/components/landing/about-section";
 import { FounderSection } from "@/components/landing/founder-section";
@@ -10,6 +11,7 @@ import { TeamSection } from "@/components/landing/team-section";
 import { AssistantBotProvider } from "@/components/providers/assistant-bot-context";
 import { db } from "@/db";
 import { waitlist } from "@/db/schema";
+import { count } from "drizzle-orm";
 
 export default function Home() {
 	return (
@@ -18,11 +20,15 @@ export default function Home() {
 		</AssistantBotProvider>
 	);
 }
+
 export const dynamic = "force-dynamic"; // Force dynamic rendering to always show the latest waitlist count
 export const revalidate = 0; // Disable revalidation for this page
-
 async function LandingPage() {
-	const waitlistCount = await db.$count(waitlist);
+	const waitlistCount = await db
+		.select({ count: count() })
+		.from(waitlist)
+		.execute()
+		.then((result) => result[0]?.count ?? 0);
 	return (
 		<div className="relative min-h-screen overflow-hidden">
 			<SmoothCursor />

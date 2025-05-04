@@ -6,15 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "cf:build": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
-    "@opennextjs/cloudflare": "1.0.0-beta.4",
+    "@neondatabase/serverless": "^1.0.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -49,6 +45,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "dotenv": "^16.5.0",
+    "drizzle-cuid2": "^2.0.0",
     "drizzle-orm": "^0.43.1",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
@@ -70,7 +67,6 @@
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "wrangler": "^4.13.2",
     "zod": "^3.24.3"
   },
   "devDependencies": {

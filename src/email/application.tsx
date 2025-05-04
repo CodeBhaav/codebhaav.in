@@ -1,4 +1,3 @@
-import { env } from "@/env";
 import {
 	Body,
 	Container,
@@ -11,7 +10,7 @@ import {
 	Text,
 } from "@react-email/components";
 
-const baseUrl = env.BASE_URL;
+const baseUrl = process.env.BASE_URL;
 
 interface FoundingMemberEmailProps {
 	name: string;

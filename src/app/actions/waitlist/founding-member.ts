@@ -28,7 +28,6 @@ export async function submitFoundingMember(
     await db
       .insert(foundingMember)
       .values({
-        id: crypto.randomUUID(),
         updatedAt: new Date(),
         ideas: data.ideas ?? "", // Provide a default value if undefined
         ...data,
