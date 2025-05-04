@@ -1,4 +1,3 @@
-export const runtime = "edge";
 import { PageHeaderMinimal } from "@/components/core/page-header-minimal";
 import WaitlitForm from "./_form";
 import type { Metadata } from "next";

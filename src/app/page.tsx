@@ -1,4 +1,3 @@
-export const runtime = "edge";
 import { SmoothCursor } from "@/components/core/smooth-cursor";
 import { AboutSection } from "@/components/landing/about-section";
 import { FounderSection } from "@/components/landing/founder-section";
