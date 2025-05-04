@@ -66,17 +66,21 @@ export async function submitWaitlist(data: {
     .execute()
     .then((result) => result[0]?.count ?? 0);
   // Send email
-  const res = await resend.emails.send({
-    from: "CodeBhaav <system@codebhaav.in>",
-    replyTo: "pranav@codebhaav.in",
-    to: [data.email],
-    subject: "Welcome to the Waitlist!",
-    react: WaitlistJoinEmail({
-      name: data.name,
-      referralPosition: position + 1,
-      referralCode,
-    }),
-  });
+  try {
+    const res = await resend.emails.send({
+      from: "CodeBhaav <system@codebhaav.in>",
+      replyTo: "pranav@codebhaav.in",
+      to: [data.email],
+      subject: "Welcome to the Waitlist!",
+      react: WaitlistJoinEmail({
+        name: data.name,
+        referralPosition: position + 1,
+        referralCode,
+      }),
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
 
   revalidatePath("/waitlist"); // if needed
   return { position: position + 1, referralCode };

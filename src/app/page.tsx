@@ -32,7 +32,6 @@ async function LandingPage() {
 	return (
 		<div className="relative min-h-screen overflow-hidden">
 			<SmoothCursor />
-			{waitlistCount}
 			{/* Hero Section - Using the new HeroV2 component */}
 			<HeroV2 waitlistCount={waitlistCount} />
 
