@@ -28,6 +28,9 @@
 .claude/
 .agents/
 
+# personal session handoff scratchpad
+/handoff.md
+
 # misc
 .DS_Store
 *.pem

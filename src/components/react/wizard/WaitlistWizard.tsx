@@ -6,6 +6,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import posthog from "posthog-js";
 import { motion, AnimatePresence } from "motion/react";
 import { useUser, SignInButton } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
@@ -599,6 +600,7 @@ function SuccessScreen({
     navigator.clipboard.writeText(referralLink).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      posthog.capture("referral_link_copied", { source: "waitlist_success" });
     });
   }, [referralLink]);
 
@@ -844,19 +846,39 @@ export function WaitlistWizard({
           } catch {
             /* ignore */
           }
+          posthog.identify(userEmail, {
+            name: userName,
+            email: userEmail,
+            role: formData.role,
+            interests: formData.interests,
+            referred_by: refCode || undefined,
+          });
+          posthog.capture("waitlist_signup_completed", {
+            role: formData.role,
+            interests: formData.interests,
+            position: result.position,
+            has_referral_code: Boolean(refCode),
+          });
           setCurrentStep(3);
         })
         .catch((error) => {
           setIsSubmitting(false);
-          setSubmitError(
+          const message =
             error instanceof Error
               ? error.message
-              : "Something went wrong. Please try again.",
-          );
+              : "Something went wrong. Please try again.";
+          setSubmitError(message);
+          posthog.capture("waitlist_signup_error", { error_message: message });
+          posthog.captureException(error instanceof Error ? error : new Error(message));
         });
       return;
     }
 
+    const stepNames = ["role", "interests", "reason"] as const;
+    posthog.capture("waitlist_wizard_step_completed", {
+      step: currentStep,
+      step_name: stepNames[currentStep],
+    });
     setCurrentStep((s) => s + 1);
   }, [
     currentStep,

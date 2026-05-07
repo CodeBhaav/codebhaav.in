@@ -1,6 +1,7 @@
 import { useState, useCallback, type FormEvent } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
+import posthog from "posthog-js";
 
 interface FormData {
 	name: string;
@@ -199,11 +200,23 @@ export function FoundingMemberForm() {
 					commitment: formData.commitment.trim(),
 					ideas: formData.ideas.trim() || undefined,
 				});
+					posthog.identify(formData.email.trim(), {
+					name: formData.name.trim(),
+					email: formData.email.trim(),
+				});
+				posthog.capture("founding_member_application_submitted", {
+					has_github: Boolean(formData.github.trim()),
+					has_linkedin: Boolean(formData.linkedin.trim()),
+					has_portfolio: Boolean(formData.portfolio.trim()),
+					has_ideas: Boolean(formData.ideas.trim()),
+				});
 				setIsSuccess(true);
 			} catch (err) {
 				const message =
 					err instanceof Error ? err.message : "Something went wrong. Please try again.";
 				setSubmitError(message);
+				posthog.capture("founding_member_application_error", { error_message: message });
+				posthog.captureException(err instanceof Error ? err : new Error(message));
 			} finally {
 				setIsSubmitting(false);
 			}

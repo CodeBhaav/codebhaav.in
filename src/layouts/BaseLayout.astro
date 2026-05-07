@@ -2,6 +2,8 @@
 import "@/styles/global.css";
 import { Navbar } from "@/components/react/sections/Navbar";
 import Footer from "@/components/static/Footer.astro";
+import PostHog from "@/components/posthog.astro";
+import GoogleAnalytics from "@/components/google-analytics.astro";
 
 interface Props {
 	title: string;
@@ -55,6 +57,9 @@ const canonical = Astro.url.toString();
 		<meta name="twitter:title" content={resolvedOgTitle} />
 		<meta name="twitter:description" content={resolvedOgDesc} />
 		<meta name="twitter:image" content={resolvedOg} />
+
+		<PostHog />
+		<GoogleAnalytics />
 	</head>
 	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
 		{!hideChrome && <Navbar client:load />}

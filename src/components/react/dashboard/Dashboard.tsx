@@ -2,6 +2,7 @@ import { useQuery } from "convex/react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
 import { useState, useCallback } from "react";
+import posthog from "posthog-js";
 
 export function Dashboard() {
 	const { user, isLoaded } = useUser();
@@ -200,6 +201,7 @@ function ReferralCard({ link }: { link: string }) {
 		navigator.clipboard.writeText(link).then(() => {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
+			posthog.capture("referral_link_copied", { source: "dashboard" });
 		});
 	}, [link]);
 

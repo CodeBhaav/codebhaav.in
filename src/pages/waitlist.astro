@@ -25,4 +25,7 @@ const ogDescription = ref
   <div class="min-h-[calc(100vh-65px)] w-full">
     <WaitlistIsland client:only="react" />
   </div>
+  <script is:inline>
+    window.posthog?.capture('waitlist_page_viewed', { has_referral_code: Boolean(new URLSearchParams(window.location.search).get('ref')) });
+  </script>
 </BaseLayout>

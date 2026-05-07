@@ -30,6 +30,8 @@
 		"convex": "^1.21.0",
 		"lucide-react": "^0.503.0",
 		"motion": "^12.9.2",
+		"posthog-js": "^1.372.9",
+		"posthog-node": "^5.33.3",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"resend": "^4.5.0",
