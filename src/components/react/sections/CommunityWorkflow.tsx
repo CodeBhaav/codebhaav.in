@@ -77,6 +77,52 @@ function WorkflowCard({ step }: { step: WorkStep }) {
 	);
 }
 
+function VerticalConnector() {
+	return (
+		<motion.svg
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			transition={{ duration: 0.4 }}
+			className="pointer-events-none mx-auto block h-14 w-6 sm:hidden"
+			viewBox="0 0 24 56"
+			fill="none"
+		>
+			<motion.circle
+				initial={{ scale: 0 }}
+				animate={{ scale: 1 }}
+				transition={{ delay: 0.3, duration: 0.3 }}
+				cx="12"
+				cy="6"
+				r="4"
+				fill="#0a0a0b"
+				stroke="#F59E0B"
+				strokeWidth="2"
+				style={{ transformOrigin: "12px 6px" }}
+			/>
+			<motion.path
+				initial={{ pathLength: 0 }}
+				animate={{ pathLength: 1 }}
+				transition={{ duration: 0.7, ease: "easeInOut" }}
+				d="M12 10 L12 44"
+				stroke="#F59E0B"
+				strokeWidth="2"
+				strokeLinecap="round"
+			/>
+			<motion.path
+				initial={{ opacity: 0 }}
+				animate={{ opacity: 1 }}
+				transition={{ delay: 0.7 }}
+				d="M6 42 L12 50 L18 42"
+				stroke="#F59E0B"
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+				fill="none"
+			/>
+		</motion.svg>
+	);
+}
+
 function ConnectorSVG({
 	className,
 	flip = false,
@@ -195,10 +241,13 @@ export function CommunityWorkflow() {
 					)}
 				</AnimatePresence>
 				<AnimatePresence>
+					{visibleSteps >= 2 && <VerticalConnector key="v1" />}
+				</AnimatePresence>
+				<AnimatePresence>
 					{visibleSteps >= 2 && (
 						<StepCard
 							step={steps[1]}
-							className="relative z-10 mt-6 sm:mt-12 w-full sm:ml-auto sm:w-fit sm:-mr-4"
+							className="relative z-10 sm:mt-12 w-full sm:ml-auto sm:w-fit sm:-mr-4"
 							showConnector={visibleSteps >= 3}
 							connectorClassName="hidden sm:block absolute -left-20 top-8"
 							flip
@@ -206,10 +255,13 @@ export function CommunityWorkflow() {
 					)}
 				</AnimatePresence>
 				<AnimatePresence>
+					{visibleSteps >= 3 && <VerticalConnector key="v2" />}
+				</AnimatePresence>
+				<AnimatePresence>
 					{visibleSteps >= 3 && (
 						<StepCard
 							step={steps[2]}
-							className="relative z-10 mt-6 sm:mt-12 max-w-xl w-full sm:w-auto sm:-ml-4"
+							className="relative z-10 sm:mt-12 max-w-xl w-full sm:w-auto sm:-ml-4"
 						/>
 					)}
 				</AnimatePresence>
