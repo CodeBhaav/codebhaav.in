@@ -279,7 +279,7 @@ function PrimaryButton({
       disabled={disabled || loading}
       onClick={onClick}
       className={cn(
-        "group inline-flex h-12 min-w-[180px] items-center justify-center gap-2 rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-7 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all",
+        "group inline-flex h-12 min-w-[180px] items-center justify-center gap-2 rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-7 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all",
         "hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px",
         "disabled:cursor-not-allowed disabled:bg-none disabled:bg-surface disabled:text-text-muted disabled:shadow-none disabled:ring-border disabled:hover:from-surface disabled:hover:to-surface",
       )}
@@ -705,7 +705,7 @@ function SignInGate({ returnUrl }: { returnUrl: string }) {
         >
           <button
             type="button"
-            className="inline-flex h-11 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-7 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px"
+            className="inline-flex h-11 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-7 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px"
           >
             Sign in to continue
           </button>
@@ -749,7 +749,7 @@ function AlreadyOnWaitlist({ name, email }: { name: string; email: string }) {
       <div className="mt-6 flex items-center justify-center gap-3">
         <a
           href="/dashboard"
-          className="inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-5 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
+          className="inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-5 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
         >
           Go to dashboard
         </a>

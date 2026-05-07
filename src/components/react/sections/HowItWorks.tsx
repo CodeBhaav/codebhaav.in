@@ -64,7 +64,7 @@ function MockWizard() {
         </p>
       </div>
       <div className="mt-4 flex justify-end">
-        <div className="rounded-button bg-accent px-4 py-2 text-xs font-medium text-white">
+        <div className="rounded-button bg-accent px-4 py-2 text-xs font-semibold text-accent-foreground">
           Continue →
         </div>
       </div>

@@ -30,7 +30,7 @@ export function Dashboard() {
 				</p>
 				<a
 					href="/sign-in"
-					className="mt-4 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
+					className="mt-4 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
 				>
 					Sign In
 				</a>
@@ -53,7 +53,7 @@ export function Dashboard() {
 				</p>
 				<a
 					href="/waitlist"
-					className="mt-6 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
+					className="mt-6 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
 				>
 					Join the Waitlist
 				</a>

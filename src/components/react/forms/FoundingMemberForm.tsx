@@ -442,7 +442,7 @@ export function FoundingMemberForm() {
 					<button
 						type="submit"
 						disabled={isSubmitting}
-						className="inline-flex h-11 w-full items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
+						className="inline-flex h-11 w-full items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
 					>
 						{isSubmitting ? "Submitting..." : "Submit Application"}
 					</button>
