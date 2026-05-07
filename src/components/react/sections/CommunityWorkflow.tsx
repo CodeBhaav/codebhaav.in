@@ -57,7 +57,7 @@ function CodeIcon() {
 
 function WorkflowCard({ step }: { step: WorkStep }) {
 	return (
-		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl min-w-[200px] sm:min-w-[280px]">
+		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl min-w-[180px] sm:min-w-[280px]">
 			<div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
 				<CodeIcon />
 				<span className="text-sm font-medium text-text-primary truncate">
