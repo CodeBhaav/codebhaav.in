@@ -57,7 +57,7 @@ function CodeIcon() {
 
 function WorkflowCard({ step }: { step: WorkStep }) {
 	return (
-		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl min-w-[280px]">
+		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl w-full sm:min-w-[280px]">
 			<div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
 				<CodeIcon />
 				<span className="text-sm font-medium text-text-primary truncate">
@@ -181,15 +181,16 @@ export function CommunityWorkflow() {
 	return (
 		<div
 			ref={blockRef}
-			className="relative min-h-[460px] md:min-h-[520px] flex p-6 md:p-12 overflow-visible"
+			className="relative min-h-[460px] md:min-h-[520px] flex p-4 sm:p-6 md:p-12 overflow-visible"
 		>
 			<div className="w-full max-w-lg mx-auto relative">
 				<AnimatePresence>
 					{visibleSteps >= 1 && (
 						<StepCard
 							step={steps[0]}
-							className="relative z-10 w-fit -ml-2"
+							className="relative z-10 w-full sm:w-fit sm:-ml-2"
 							showConnector={visibleSteps >= 2}
+							connectorClassName="hidden sm:block absolute -right-20 top-8"
 						/>
 					)}
 				</AnimatePresence>
@@ -197,9 +198,9 @@ export function CommunityWorkflow() {
 					{visibleSteps >= 2 && (
 						<StepCard
 							step={steps[1]}
-							className="relative z-10 mt-12 ml-auto w-fit -mr-4"
+							className="relative z-10 mt-6 sm:mt-12 w-full sm:ml-auto sm:w-fit sm:-mr-4"
 							showConnector={visibleSteps >= 3}
-							connectorClassName="absolute -left-20 top-8"
+							connectorClassName="hidden sm:block absolute -left-20 top-8"
 							flip
 						/>
 					)}
@@ -208,7 +209,7 @@ export function CommunityWorkflow() {
 					{visibleSteps >= 3 && (
 						<StepCard
 							step={steps[2]}
-							className="relative z-10 mt-12 max-w-xl -ml-4"
+							className="relative z-10 mt-6 sm:mt-12 max-w-xl w-full sm:w-auto sm:-ml-4"
 						/>
 					)}
 				</AnimatePresence>
