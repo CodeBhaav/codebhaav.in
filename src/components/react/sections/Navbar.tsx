@@ -198,39 +198,41 @@ export function Navbar() {
 	const ctaText = signedIn ? "Dashboard" : siteConfig.cta;
 
 	return (
-		<motion.header
-			initial={{ y: 0 }}
-			animate={{ y: isVisible ? 0 : -100 }}
-			transition={{ duration: 0.3, ease: "easeInOut" }}
-			className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm"
-		>
-			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-				<a
-					href="/"
-					className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary"
-				>
-					<span className="inline-block size-2 rounded-full bg-accent" />
-					CodeBhaav
-				</a>
+		<>
+			<motion.header
+				initial={{ y: 0 }}
+				animate={{ y: isVisible ? 0 : -100 }}
+				transition={{ duration: 0.3, ease: "easeInOut" }}
+				className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm"
+			>
+				<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+					<a
+						href="/"
+						className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary"
+					>
+						<span className="inline-block size-2 rounded-full bg-accent" />
+						CodeBhaav
+					</a>
 
-				<DesktopNav />
+					<DesktopNav />
 
-				<div className="flex items-center gap-2">
-					<Button asChild size="sm" className="hidden md:inline-flex">
-						<a href={ctaHref}>{ctaText}</a>
-					</Button>
-					<HamburgerButton
-						isOpen={isMobileMenuOpen}
-						onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-					/>
+					<div className="flex items-center gap-2">
+						<Button asChild size="sm" className="hidden md:inline-flex">
+							<a href={ctaHref}>{ctaText}</a>
+						</Button>
+						<HamburgerButton
+							isOpen={isMobileMenuOpen}
+							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+						/>
+					</div>
 				</div>
-			</div>
+			</motion.header>
 
 			<MobileNav
 				isOpen={isMobileMenuOpen}
 				onClose={() => setIsMobileMenuOpen(false)}
 				signedIn={signedIn}
 			/>
-		</motion.header>
+		</>
 	);
 }
