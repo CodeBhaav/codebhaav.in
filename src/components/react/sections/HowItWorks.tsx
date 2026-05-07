@@ -220,7 +220,7 @@ export function HowItWorks() {
             key={step.id}
             type="button"
             onClick={() => handleTabClick(index)}
-            className="relative cursor-pointer overflow-hidden w-full min-h-[56px] px-5 py-4 text-sm font-medium whitespace-nowrap transition-colors flex flex-col items-center justify-center gap-1 group [&:not(:first-child)]:border-l border-t border-border"
+            className="relative cursor-pointer overflow-hidden w-full min-h-[56px] px-3 sm:px-5 py-4 text-xs sm:text-sm font-medium text-center transition-colors flex flex-col items-center justify-center gap-1 group [&:not(:first-child)]:border-l border-t border-border"
           >
             {currentIndex === index && (
               <motion.div
@@ -245,7 +245,7 @@ export function HowItWorks() {
             </span>
             <span
               className={cn(
-                "text-sm",
+                "text-xs sm:text-sm leading-tight",
                 currentIndex === index
                   ? "text-text-primary font-semibold"
                   : "text-text-secondary",

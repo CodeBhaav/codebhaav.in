@@ -3,6 +3,7 @@ import { useUser, UserButton } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
 import { useState, useCallback } from "react";
 import posthog from "posthog-js";
+import { cn } from "@/lib/utils";
 
 export function Dashboard() {
 	const { user, isLoaded } = useUser();
@@ -23,23 +24,13 @@ export function Dashboard() {
 
 	if (!user) {
 		return (
-			<div style={{ textAlign: "center", padding: "48px 0" }}>
-				<p style={{ color: "#71717A", fontSize: "16px" }}>
+			<div className="py-12 text-center">
+				<p className="text-base text-text-secondary">
 					Please sign in to view your dashboard.
 				</p>
 				<a
 					href="/sign-in"
-					style={{
-						display: "inline-block",
-						marginTop: "16px",
-						backgroundColor: "#F59E0B",
-						color: "#FFFFFF",
-						padding: "10px 24px",
-						borderRadius: "6px",
-						fontSize: "14px",
-						fontWeight: 500,
-						textDecoration: "none",
-					}}
+					className="mt-4 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
 				>
 					Sign In
 				</a>
@@ -53,38 +44,16 @@ export function Dashboard() {
 
 	if (position === null) {
 		return (
-			<div style={{ textAlign: "center", padding: "48px 0" }}>
-				<p
-					style={{
-						fontSize: "20px",
-						fontWeight: 600,
-						color: "#FAFAFA",
-						marginBottom: "8px",
-					}}
-				>
+			<div className="py-12 text-center">
+				<p className="text-lg font-semibold text-text-primary">
 					You're not on the waitlist yet
 				</p>
-				<p
-					style={{
-						color: "#71717A",
-						fontSize: "15px",
-						marginBottom: "24px",
-					}}
-				>
+				<p className="mt-2 text-[15px] text-text-secondary">
 					Join the waitlist to get your position and referral code.
 				</p>
 				<a
 					href="/waitlist"
-					style={{
-						display: "inline-block",
-						backgroundColor: "#F59E0B",
-						color: "#FFFFFF",
-						padding: "10px 24px",
-						borderRadius: "6px",
-						fontSize: "14px",
-						fontWeight: 500,
-						textDecoration: "none",
-					}}
+					className="mt-6 inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
 				>
 					Join the Waitlist
 				</a>
@@ -96,33 +65,14 @@ export function Dashboard() {
 
 	return (
 		<div>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "16px",
-					marginBottom: "32px",
-				}}
-			>
-				<p style={{ color: "#71717A", fontSize: "15px" }}>
+			<div className="mb-8 flex items-center justify-between gap-4">
+				<p className="min-w-0 truncate text-sm text-text-secondary sm:text-[15px]">
 					Welcome back, {user.firstName ?? email}
 				</p>
-				<UserButton
-					afterSignOutUrl="/"
-					appearance={{ elements: { avatarBox: "width: 36, height: 36" } }}
-				/>
+				<UserButton afterSignOutUrl="/" />
 			</div>
 
-			{/* Stats Grid */}
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-					gap: "16px",
-					marginBottom: "32px",
-				}}
-			>
+			<div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 				<StatCard label="Position" value={`#${position.position}`} />
 				<StatCard
 					label="Referrals"
@@ -131,18 +81,9 @@ export function Dashboard() {
 				<StatCard label="Code" value={referrals?.referralCode ?? "·"} mono />
 			</div>
 
-			{/* Referral Link */}
 			<ReferralCard link={referralLink} />
 
-			{/* Quick Links */}
-			<div
-				style={{
-					display: "flex",
-					gap: "12px",
-					marginTop: "24px",
-					flexWrap: "wrap",
-				}}
-			>
+			<div className="mt-6 flex flex-wrap gap-3">
 				<QuickLink href="/leaderboard" label="View Leaderboard" />
 				<QuickLink href="/founding-member" label="Apply as Founding Member" />
 			</div>
@@ -160,33 +101,15 @@ function StatCard({
 	mono?: boolean;
 }) {
 	return (
-		<div
-			style={{
-				backgroundColor: "#111113",
-				border: "1px solid #1F1F23",
-				borderRadius: "8px",
-				padding: "20px",
-			}}
-		>
-			<p
-				style={{
-					fontFamily: "monospace",
-					fontSize: "11px",
-					color: "#52525B",
-					textTransform: "uppercase",
-					letterSpacing: "0.05em",
-					marginBottom: "8px",
-				}}
-			>
+		<div className="rounded-card border border-border bg-card p-5">
+			<p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
 				{label}
 			</p>
 			<p
-				style={{
-					fontSize: "28px",
-					fontWeight: 700,
-					color: "#FAFAFA",
-					fontFamily: mono ? "monospace" : "inherit",
-				}}
+				className={cn(
+					"mt-2 text-2xl font-bold text-text-primary sm:text-[28px]",
+					mono && "font-mono",
+				)}
 			>
 				{value}
 			</p>
@@ -206,72 +129,26 @@ function ReferralCard({ link }: { link: string }) {
 	}, [link]);
 
 	return (
-		<div
-			style={{
-				backgroundColor: "#111113",
-				border: "1px solid #1F1F23",
-				borderRadius: "8px",
-				padding: "20px",
-			}}
-		>
-			<p
-				style={{
-					color: "#FAFAFA",
-					fontSize: "14px",
-					fontWeight: 500,
-					marginBottom: "12px",
-				}}
-			>
+		<div className="rounded-card border border-border bg-card p-5">
+			<p className="text-sm font-medium text-text-primary">
 				Your referral link
 			</p>
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					gap: "8px",
-					backgroundColor: "#0A0A0C",
-					border: "1px solid #1F1F23",
-					borderRadius: "6px",
-					padding: "10px 12px",
-				}}
-			>
-				<code
-					style={{
-						fontFamily: "monospace",
-						fontSize: "13px",
-						color: "#F59E0B",
-						flex: 1,
-						overflow: "hidden",
-						textOverflow: "ellipsis",
-						whiteSpace: "nowrap",
-					}}
-				>
+			<div className="mt-3 flex items-center gap-2 rounded-button border border-border bg-background px-3 py-2">
+				<code className="flex-1 truncate font-mono text-[13px] text-accent">
 					{link}
 				</code>
 				<button
 					type="button"
 					onClick={handleCopy}
-					style={{
-						background: "none",
-						border: "1px solid #1F1F23",
-						borderRadius: "4px",
-						color: copied ? "#22C55E" : "#71717A",
-						fontSize: "12px",
-						padding: "4px 10px",
-						cursor: "pointer",
-						flexShrink: 0,
-					}}
+					className={cn(
+						"shrink-0 rounded-[4px] border border-border px-2.5 py-1 text-xs transition-colors hover:border-border-hover",
+						copied ? "text-success" : "text-text-secondary",
+					)}
 				>
 					{copied ? "Copied!" : "Copy"}
 				</button>
 			</div>
-			<p
-				style={{
-					color: "#52525B",
-					fontSize: "12px",
-					marginTop: "8px",
-				}}
-			>
+			<p className="mt-3 text-xs text-text-muted">
 				Share this link. When friends join, you move up the list.
 			</p>
 		</div>
@@ -282,15 +159,7 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 	return (
 		<a
 			href={href}
-			style={{
-				display: "inline-block",
-				border: "1px solid #1F1F23",
-				borderRadius: "6px",
-				padding: "8px 16px",
-				color: "#71717A",
-				fontSize: "13px",
-				textDecoration: "none",
-			}}
+			className="inline-flex h-9 items-center rounded-button border border-border px-4 text-[13px] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
 		>
 			{label} &rarr;
 		</a>
@@ -299,38 +168,16 @@ function QuickLink({ href, label }: { href: string; label: string }) {
 
 function LoadingState() {
 	return (
-		<div style={{ padding: "48px 0" }}>
-			<div
-				style={{
-					height: "20px",
-					width: "200px",
-					backgroundColor: "#1F1F23",
-					borderRadius: "4px",
-					marginBottom: "24px",
-					animation: "pulse 2s ease-in-out infinite",
-				}}
-			/>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(3, 1fr)",
-					gap: "16px",
-				}}
-			>
+		<div className="py-12">
+			<div className="mb-6 h-5 w-48 animate-pulse rounded-[4px] bg-border" />
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
 				{[1, 2, 3].map((i) => (
 					<div
 						key={i}
-						style={{
-							height: "100px",
-							backgroundColor: "#111113",
-							borderRadius: "8px",
-							border: "1px solid #1F1F23",
-							animation: "pulse 2s ease-in-out infinite",
-						}}
+						className="h-24 animate-pulse rounded-card border border-border bg-card"
 					/>
 				))}
 			</div>
-			<style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
 		</div>
 	);
 }

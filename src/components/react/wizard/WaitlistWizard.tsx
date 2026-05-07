@@ -155,7 +155,7 @@ function WizardSidebar({
 }) {
   const meta = STEP_META[Math.min(step, STEP_META.length - 1)];
   return (
-    <aside className="relative flex flex-col justify-between border-b border-border bg-surface/30 px-6 py-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-14">
+    <aside className="relative flex flex-col justify-between border-b border-border bg-surface/30 px-6 py-6 sm:py-8 md:border-b-0 md:border-r md:px-8 md:py-12 lg:px-10 lg:py-14">
       <WizardBackdrop />
       <div className="relative z-10">
         <p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
@@ -170,7 +170,7 @@ function WizardSidebar({
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               exit={{ opacity: 0, y: -14, filter: "blur(8px)" }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="font-mono text-7xl font-semibold tracking-tighter text-text-primary leading-none lg:text-8xl"
+              className="font-mono text-5xl font-semibold tracking-tighter text-text-primary leading-none sm:text-6xl md:text-7xl lg:text-8xl"
             >
               {String(step + 1).padStart(2, "0")}
             </motion.span>
@@ -186,7 +186,7 @@ function WizardSidebar({
       </div>
 
       {/* progress dots */}
-      <div className="relative z-10 mt-10 flex items-center gap-3 lg:mt-0">
+      <div className="relative z-10 mt-8 flex items-center gap-3 md:mt-0">
         {Array.from({ length: TOTAL_STEPS }, (_, i) => {
           const state = i < step ? "done" : i === step ? "active" : "pending";
           return (
@@ -224,7 +224,7 @@ function WizardSidebar({
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="relative z-10 mt-6 hidden font-mono text-[11px] uppercase tracking-wider text-text-muted lg:block"
+          className="relative z-10 mt-6 hidden font-mono text-[11px] uppercase tracking-wider text-text-muted md:block"
         >
           {interestsCount} selected
         </motion.p>
@@ -678,7 +678,7 @@ function SuccessScreen({
 
 function CenteredCard({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[calc(100vh-65px)] items-center justify-center px-6 py-16">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-6 py-16">
       <div className="w-full max-w-md text-center">{children}</div>
     </div>
   );
@@ -954,7 +954,7 @@ export function WaitlistWizard({
   // Success
   if (currentStep === 3) {
     return (
-      <div className="flex min-h-[calc(100vh-65px)] items-center justify-center px-6 py-16">
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-6 py-16">
         <SuccessScreen
           name={userName.split(" ")[0] || "there"}
           referralCode={generatedCode}
@@ -966,13 +966,13 @@ export function WaitlistWizard({
 
   // Wizard  full-screen split
   return (
-    <div className="grid min-h-[calc(100vh-65px)] grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr]">
+    <div className="grid min-h-[calc(100vh-64px)] grid-cols-1 md:grid-cols-[minmax(240px,320px)_1fr] lg:grid-cols-[minmax(280px,360px)_1fr]">
       <WizardSidebar
         step={currentStep}
         interestsCount={formData.interests.length}
       />
 
-      <section className="relative flex flex-col px-6 py-10 lg:px-14 lg:py-16">
+      <section className="relative flex flex-col px-6 py-8 sm:py-10 md:px-10 md:py-12 lg:px-14 lg:py-16">
         <div className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div

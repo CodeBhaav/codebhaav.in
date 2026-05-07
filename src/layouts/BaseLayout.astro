@@ -61,10 +61,10 @@ const canonical = Astro.url.toString();
 		<PostHog />
 		<GoogleAnalytics />
 	</head>
-	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
+	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden lg:px-0 font-sans antialiased">
 		{!hideChrome && <Navbar client:load />}
 
-		<div class="mx-auto max-w-7xl border-x border-border min-h-screen">
+		<div class="mx-auto max-w-7xl border-x-0 lg:border-x border-border min-h-screen">
 			<main class={hideChrome ? "" : "pt-16"}>
 				<slot />
 			</main>
