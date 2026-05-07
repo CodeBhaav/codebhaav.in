@@ -1,0 +1,89 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/static/PageHeader.astro";
+import FoundingMemberIsland from "@/components/react/islands/FoundingMemberIsland";
+
+const benefits = [
+  {
+    title: "Recognition",
+    description: "Be recognized as a founding member on our site.",
+  },
+  {
+    title: "Decision making",
+    description: "Help shape the direction of the community from day one.",
+  },
+  {
+    title: "Early access",
+    description: "First access to all resources, sprints, and events.",
+  },
+];
+---
+
+<BaseLayout
+  title="Founding Member"
+  description="Apply to help shape CodeBhaav from the ground up."
+  ogImage="/api/og.png?page=founding-member"
+>
+  <PageHeader
+    eyebrow="Founding circle"
+    title="Help build it,"
+    titleAccent="not just join it."
+    description="Founding members shape what CodeBhaav becomes. You'll influence early decisions, get the platform first, and be recognized as part of the original cohort."
+    meta="Applications open · Limited cohort"
+  />
+
+  <section class="px-6 py-16 md:py-20">
+    <div class="w-full grid grid-cols-1 gap-12 lg:grid-cols-[300px_1fr]">
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <p
+          class="font-mono text-[11px] uppercase tracking-wider text-text-muted"
+        >
+          What you get
+        </p>
+        <div class="mt-6 flex flex-col gap-3">
+          {
+            benefits.map((b, i) => (
+              <div
+                class="reveal rounded-card border border-border bg-card p-4"
+                style={`--reveal-delay: ${i * 80}ms`}
+              >
+                <h3 class="text-sm font-semibold tracking-tight text-text-primary">
+                  {b.title}
+                </h3>
+                <p class="mt-1 text-xs leading-relaxed text-text-secondary">
+                  {b.description}
+                </p>
+              </div>
+            ))
+          }
+        </div>
+
+        <div class="mt-8 rounded-card border border-border bg-card p-4">
+          <p class="text-xs text-text-secondary">Just want updates?</p>
+          <a
+            href="/waitlist"
+            class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-accent-hover"
+          >
+            Join the waitlist instead
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg
+            >
+          </a>
+        </div>
+      </aside>
+
+      <div>
+        <FoundingMemberIsland client:only="react" />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,181 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/static/PageHeader.astro";
+import { KineticText } from "@/components/react/ui/kinetic-text";
+import { TextHighlighter } from "@/components/react/ui/text-highlighter";
+
+const values = [
+  {
+    title: "Authenticity",
+    description:
+      "No fake guru energy. No overpriced fluff. Just honest learning from people who are in the trenches with you.",
+  },
+  {
+    title: "Practical learning",
+    description:
+      "Real-world projects, not theory. The best way to learn is by building things that matter and shipping them.",
+  },
+  {
+    title: "Inclusivity",
+    description:
+      "Everyone belongs, especially those without the perfect background. Curiosity and drive are the credentials here.",
+  },
+  {
+    title: "Open by default",
+    description:
+      "Knowledge shared freely. Built in the open. Transparency creates the strongest foundations.",
+  },
+];
+---
+
+<BaseLayout
+  title="Mission"
+  description="Building something raw, real, and valuable for self-taught developers."
+  ogImage="/api/og.png?page=mission"
+>
+  <PageHeader
+    eyebrow="Mission"
+    title="Why we're"
+    titleAccent="building this."
+    description="Most tech communities are built around hype: chasing trends, gatekeeping knowledge behind paywalls, rewarding the loudest voices. Self-taught developers, the ones teaching themselves at midnight without a mentor, are left feeling like outsiders in their own industry."
+  />
+
+  <section class="px-6 py-20 md:py-24 border-b border-border">
+    <div class="max-w-3xl">
+      <p
+        class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+      >
+        The problem
+      </p>
+      <div class="mt-4">
+        <KineticText
+          client:load
+          text="Self-taught devs are figuring it out alone, and the industry is happy to keep it that way."
+          className="text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+        />
+      </div>
+      <p
+        class="reveal mt-6 text-base text-text-secondary leading-relaxed"
+        style="--reveal-delay: 200ms"
+      >
+        CodeBhaav exists to change that. We're building a space where learning
+        is honest, collaboration is genuine, and{" "}
+        <TextHighlighter client:load>
+          every developer, regardless of their background
+        </TextHighlighter>
+        , has a seat at the table.
+      </p>
+    </div>
+  </section>
+
+  <section class="px-6 py-20 md:py-24 border-b border-border">
+    <div class="w-full">
+      <p
+        class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+      >
+        What we stand for
+      </p>
+      <div class="mt-4 max-w-2xl">
+        <KineticText
+          client:load
+          text="Four things, non-negotiable."
+          className="text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+        />
+      </div>
+      <div
+        class="mt-12 grid grid-cols-1 gap-px bg-border md:grid-cols-2 rounded-card overflow-hidden border border-border"
+      >
+        {
+          values.map((v, i) => (
+            <div
+              class="reveal bg-card p-7 transition-colors hover:bg-surface"
+              style={`--reveal-delay: ${150 + i * 80}ms`}
+            >
+              <h3 class="text-base font-semibold tracking-tight text-text-primary">
+                {v.title}
+              </h3>
+              <p class="mt-2 text-sm leading-relaxed text-text-secondary">
+                {v.description}
+              </p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="px-6 py-20 md:py-24 border-b border-border">
+    <div class="max-w-3xl">
+      <p
+        class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+      >
+        Approach
+      </p>
+      <div class="mt-4">
+        <KineticText
+          client:load
+          text="Small, intentional, in the open."
+          className="text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+        />
+      </div>
+      <p
+        class="reveal mt-6 text-base text-text-secondary leading-relaxed"
+        style="--reveal-delay: 200ms"
+      >
+        We're not trying to be the next big platform. We're building a small,
+        intentional community where members actually know each other. Where{" "}
+        <TextHighlighter client:load>
+          asking a "dumb question" is encouraged
+        </TextHighlighter>
+        . Where your first open-source contribution is celebrated, not critiqued.
+      </p>
+      <p
+        class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+        style="--reveal-delay: 280ms"
+      >
+        CodeBhaav starts with a founding cohort of developers who believe in
+        this vision. Together we'll shape the culture, build the tools, and
+        create the resources that the next generation of self-taught developers
+        deserves.
+      </p>
+    </div>
+  </section>
+
+  <section class="relative px-6 py-20 md:py-28 overflow-hidden">
+    <div
+      class="absolute inset-0 -z-10"
+      style="background: radial-gradient(ellipse 50% 50% at 50% 100%, rgba(245, 158, 11, 0.10) 0%, transparent 70%);"
+    >
+    </div>
+    <div class="max-w-2xl">
+      <h2
+        class="reveal text-2xl md:text-4xl font-semibold tracking-tighter text-balance"
+      >
+        Ready to help shape this?
+      </h2>
+      <p
+        class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+        style="--reveal-delay: 100ms"
+      >
+        Apply for the founding circle and help decide what CodeBhaav becomes.
+      </p>
+      <div
+        class="reveal mt-8 flex flex-col sm:flex-row gap-3"
+        style="--reveal-delay: 200ms"
+      >
+        <a
+          href="/founding-member"
+          class="inline-flex h-11 items-center justify-center rounded-button bg-accent px-6 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+        >
+          Apply as founding member
+        </a>
+        <a
+          href="/waitlist"
+          class="inline-flex h-11 items-center justify-center rounded-button border border-border bg-transparent px-6 text-sm font-medium text-text-primary hover:bg-surface hover:border-border-hover transition-colors"
+        >
+          Join the waitlist
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

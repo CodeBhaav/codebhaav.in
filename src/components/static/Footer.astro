@@ -1,0 +1,45 @@
+---
+import { siteConfig } from "@/lib/site-config";
+---
+
+<footer class="w-full border-t border-border">
+	<div class="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
+		{siteConfig.footerLinks.map((section) => (
+			<div class="flex flex-col gap-4 p-8 lg:pt-16">
+				<h3 class="font-mono text-xs uppercase tracking-widest text-text-muted">
+					{section.title}
+				</h3>
+				<ul class="flex flex-col gap-3">
+					{section.links.map((link) => (
+						<li>
+							<a
+								href={link.url}
+								class="text-sm text-text-secondary hover:text-text-primary transition-colors"
+							>
+								{link.title}
+							</a>
+						</li>
+					))}
+				</ul>
+			</div>
+		))}
+
+		<div class="flex flex-col gap-3 p-8 lg:pt-16 items-start">
+			<h3 class="font-mono text-xs uppercase tracking-widest text-text-muted">
+				CodeBhaav
+			</h3>
+			<p class="text-sm text-text-secondary leading-relaxed">
+				A community for self-taught developers. Built in Amravati, India.
+			</p>
+			<p class="font-mono text-xs text-text-muted mt-auto pt-4">
+				{siteConfig.location}
+			</p>
+		</div>
+	</div>
+
+	<div class="border-t border-border py-5 px-6">
+		<p class="text-xs text-text-muted text-center font-mono">
+			&copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+		</p>
+	</div>
+</footer>

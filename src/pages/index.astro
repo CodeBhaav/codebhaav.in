@@ -1,0 +1,27 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Hero from "@/components/static/Hero.astro";
+import Stats from "@/components/static/Stats.astro";
+import HowItWorksSection from "@/components/static/HowItWorksSection.astro";
+import CommunityWorkflowSection from "@/components/static/CommunityWorkflowSection.astro";
+import CommunityMapSection from "@/components/static/CommunityMapSection.astro";
+import About from "@/components/static/About.astro";
+import FAQ from "@/components/static/FAQ.astro";
+import CTA from "@/components/static/CTA.astro";
+---
+
+<BaseLayout
+  title="Home"
+  ogImage="/api/og.png?page=home"
+>
+	<div class="flex flex-col">
+		<Hero />
+		<Stats />
+		<HowItWorksSection />
+		<CommunityWorkflowSection />
+		<CommunityMapSection />
+		<About />
+		<FAQ />
+		<CTA />
+	</div>
+</BaseLayout>

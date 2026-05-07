@@ -1,0 +1,84 @@
+---
+import { KineticText } from "@/components/react/ui/kinetic-text";
+import { TextHighlighter } from "@/components/react/ui/text-highlighter";
+---
+
+<section class="px-6 py-24 md:py-32 border-t border-border">
+  <div
+    class="mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start"
+  >
+    <div>
+      <p
+        class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+      >
+        Origins
+      </p>
+      <div class="mt-4">
+        <KineticText
+          client:load
+          text="Built by a self-taught dev, for self-taught devs."
+          className="text-3xl md:text-4xl font-semibold leading-tight tracking-tighter text-balance"
+        />
+      </div>
+      <p
+        class="reveal mt-6 text-base leading-relaxed text-text-secondary"
+        style="--reveal-delay: 200ms"
+      >
+        CodeBhaav started in Amravati, Maharashtra. Born from a self-taught
+        developer's path: from working as an office boy to writing his first
+        line of code, and learning that the best way to grow is{" "}
+        <TextHighlighter client:load>
+          by doing, not by collecting tutorial badges
+        </TextHighlighter>
+        . This community exists so the next one doesn't have to figure it out alone.
+      </p>
+      <a
+        href="/mission"
+        class="reveal mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-accent-hover"
+        style="--reveal-delay: 300ms"
+      >
+        Read our mission
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg
+        >
+      </a>
+    </div>
+
+    <div class="reveal" style="--reveal-delay: 200ms">
+      <div class="rounded-card border border-border bg-card overflow-hidden">
+        <div
+          class="flex items-center gap-2 px-4 py-3 border-b border-border bg-surface"
+        >
+          <span class="inline-block size-3 rounded-full bg-[#FF5F57]"></span>
+          <span class="inline-block size-3 rounded-full bg-[#FEBC2E]"></span>
+          <span class="inline-block size-3 rounded-full bg-[#28C840]"></span>
+          <span class="ml-2 font-mono text-xs text-text-muted"
+            >community.ts</span
+          >
+        </div>
+        <pre
+          class="overflow-x-auto p-5 font-mono text-[13px] leading-[1.7]"><code class="text-text-secondary"><span class="text-accent">const</span> community = &#123;
+  name: <span class="text-success">"CodeBhaav"</span>,
+  status: <span class="text-success">"pre-launch"</span>,
+  starting_in: <span class="text-success">"Amravati, IN"</span>,
+  open_source: <span class="text-accent">true</span>,
+  paid_courses: <span class="text-accent">false</span>,
+  vibes: <span class="text-success">"no fake guru energy"</span>,
+&#125;;
+
+<span class="text-accent">function</span> <span class="text-text-primary">join</span>(dev: SelfTaughtDev) &#123;
+  <span class="text-accent">return</span> waitlist.add(dev);
+&#125;</code></pre>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,72 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/static/PageHeader.astro";
+import {
+  LeaderboardTableIsland,
+  UserStatsIsland,
+} from "@/components/react/islands/LeaderboardIsland";
+
+const steps = [
+  { number: 1, label: "Join the waitlist" },
+  { number: 2, label: "Get your referral code" },
+  { number: 3, label: "Share with friends" },
+  { number: 4, label: "Top referrers get founding access" },
+];
+---
+
+<BaseLayout
+  title="Leaderboard"
+  description="Refer friends, climb the line."
+  ogImage="/api/og.png?page=leaderboard"
+>
+  <PageHeader
+    eyebrow="Referrals"
+    title="Climb the line"
+    titleAccent="one referral at a time."
+    description="Every developer you bring moves you up. Top referrers get founding-tier access first when the platform opens."
+  />
+
+  <section class="px-6 py-16 md:py-20 border-b border-border">
+    <div class="w-full">
+      <UserStatsIsland client:only="react" />
+    </div>
+  </section>
+
+  <section class="px-6 py-16 md:py-20">
+    <div class="w-full grid grid-cols-1 gap-12 lg:grid-cols-[1fr_300px]">
+      <div>
+        <p
+          class="font-mono text-[11px] uppercase tracking-wider text-text-muted mb-6"
+        >
+          The line
+        </p>
+        <LeaderboardTableIsland client:only="react" />
+      </div>
+
+      <aside>
+        <p
+          class="font-mono text-[11px] uppercase tracking-wider text-text-muted mb-6"
+        >
+          How it works
+        </p>
+        <div class="relative">
+          {
+            steps.map((step, index) => (
+              <div class="relative flex gap-4 pb-8 last:pb-0">
+                {index < steps.length - 1 && (
+                  <div class="absolute left-[13px] top-7 h-full border-l border-border" />
+                )}
+                <div class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-card">
+                  <span class="font-mono text-xs text-accent">
+                    {step.number}
+                  </span>
+                </div>
+                <p class="pt-1 text-sm text-text-secondary">{step.label}</p>
+              </div>
+            ))
+          }
+        </div>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>

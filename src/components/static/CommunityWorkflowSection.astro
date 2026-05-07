@@ -1,0 +1,39 @@
+---
+import { CommunityWorkflow } from "@/components/react/sections/CommunityWorkflow";
+import { CornerPlus } from "@/components/react/ui/corner-plus";
+---
+
+<section id="parallel" class="border-t border-border">
+	<div class="grid grid-cols-1 md:grid-cols-6">
+		<div class="col-span-1 md:col-span-2 p-8 md:p-10 lg:p-14 md:sticky md:top-20 md:self-start flex flex-col gap-6">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-accent">
+				What it'll feel like
+			</p>
+			<h3
+				class="reveal text-3xl lg:text-4xl font-semibold tracking-tighter text-balance"
+				style="--reveal-delay: 100ms"
+			>
+				A weekend sprint. Three tracks. One ship.
+			</h3>
+			<p
+				class="reveal text-base text-text-secondary leading-relaxed"
+				style="--reveal-delay: 200ms"
+			>
+				When we open the platform, you'll be paired with a frontend, a backend,
+				and a designer for a focused weekend sprint. Real-time progress on each
+				track. The point is to ship something together, not collect badges alone.
+			</p>
+			<p
+				class="reveal font-mono text-xs text-text-muted"
+				style="--reveal-delay: 300ms"
+			>
+				This is a preview · sprints start after launch
+			</p>
+		</div>
+
+		<div class="col-span-1 md:col-span-4 w-full border-t md:border-t-0 md:border-l border-border relative">
+			<CornerPlus position="all" className="text-text-muted/40" />
+			<CommunityWorkflow client:visible />
+		</div>
+	</div>
+</section>

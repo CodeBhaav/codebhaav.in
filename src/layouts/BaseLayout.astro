@@ -1,0 +1,100 @@
+---
+import "@/styles/global.css";
+import { Navbar } from "@/components/react/sections/Navbar";
+import Footer from "@/components/static/Footer.astro";
+
+interface Props {
+	title: string;
+	description?: string;
+	hideChrome?: boolean;
+	ogImage?: string;
+	ogTitle?: string;
+	ogDescription?: string;
+}
+
+const {
+	title,
+	description = "A community for self-taught developers to learn, build, and grow together.",
+	hideChrome = false,
+	ogImage,
+	ogTitle,
+	ogDescription,
+} = Astro.props;
+
+const siteUrl = Astro.site ?? new URL("https://codebhaav.in");
+const resolvedOg = ogImage
+	? new URL(ogImage, Astro.url).toString()
+	: new URL("/api/og.png", siteUrl).toString();
+const resolvedOgTitle = ogTitle ?? `${title} · CodeBhaav`;
+const resolvedOgDesc = ogDescription ?? description;
+const canonical = Astro.url.toString();
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+		<link rel="canonical" href={canonical} />
+		<title>{title} · CodeBhaav</title>
+
+		<!-- Open Graph -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="CodeBhaav" />
+		<meta property="og:title" content={resolvedOgTitle} />
+		<meta property="og:description" content={resolvedOgDesc} />
+		<meta property="og:image" content={resolvedOg} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:url" content={canonical} />
+
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={resolvedOgTitle} />
+		<meta name="twitter:description" content={resolvedOgDesc} />
+		<meta name="twitter:image" content={resolvedOg} />
+	</head>
+	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
+		{!hideChrome && <Navbar client:load />}
+
+		<div class="mx-auto max-w-7xl border-x border-border min-h-screen">
+			<main class={hideChrome ? "" : "pt-16"}>
+				<slot />
+			</main>
+
+			{!hideChrome && <Footer />}
+		</div>
+
+		<script is:inline>
+			(() => {
+				const reveal = (el) => el.classList.add("reveal-in");
+				const aboveFold = window.innerHeight;
+				const targets = document.querySelectorAll(".reveal");
+				targets.forEach((el) => {
+					const top = el.getBoundingClientRect().top;
+					if (top < aboveFold) reveal(el);
+				});
+				if (!("IntersectionObserver" in window)) {
+					targets.forEach(reveal);
+					return;
+				}
+				const io = new IntersectionObserver(
+					(entries) => {
+						entries.forEach((e) => {
+							if (e.isIntersecting) {
+								reveal(e.target);
+								io.unobserve(e.target);
+							}
+						});
+					},
+					{ rootMargin: "-40px 0px -40px 0px", threshold: 0 },
+				);
+				targets.forEach((el) => {
+					if (!el.classList.contains("reveal-in")) io.observe(el);
+				});
+			})();
+		</script>
+	</body>
+</html>

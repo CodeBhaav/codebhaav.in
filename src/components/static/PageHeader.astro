@@ -1,0 +1,62 @@
+---
+import { CornerPlus } from "@/components/react/ui/corner-plus";
+
+interface Props {
+	eyebrow?: string;
+	title: string;
+	titleAccent?: string;
+	description?: string;
+	meta?: string;
+}
+
+const { eyebrow, title, titleAccent, description, meta } = Astro.props;
+---
+
+<section class="relative px-6 py-20 md:py-28 overflow-hidden border-b border-border">
+	<CornerPlus position="bottom-left" className="text-text-muted/40" />
+	<CornerPlus position="bottom-right" className="text-text-muted/40" />
+
+	<div
+		class="absolute inset-0 -z-10"
+		style="background: radial-gradient(ellipse 60% 60% at 50% 0%, rgba(245, 158, 11, 0.10) 0%, transparent 65%);"
+	>
+	</div>
+
+	<div class="relative z-10 max-w-3xl">
+		{eyebrow && (
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-accent">
+				{eyebrow}
+			</p>
+		)}
+		<h1
+			class="reveal mt-4 text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tighter text-balance leading-[1.05]"
+			style="--reveal-delay: 100ms"
+		>
+			{title}
+			{titleAccent && (
+				<>
+					<br />
+					<span class="bg-gradient-to-r from-accent to-[#F97316] bg-clip-text text-transparent">
+						{titleAccent}
+					</span>
+				</>
+			)}
+		</h1>
+		{description && (
+			<p
+				class="reveal mt-6 max-w-2xl text-base md:text-lg text-text-secondary leading-relaxed text-balance"
+				style="--reveal-delay: 200ms"
+			>
+				{description}
+			</p>
+		)}
+		{meta && (
+			<p
+				class="reveal mt-6 font-mono text-xs text-text-muted"
+				style="--reveal-delay: 300ms"
+			>
+				{meta}
+			</p>
+		)}
+	</div>
+</section>

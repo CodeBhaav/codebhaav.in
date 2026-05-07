@@ -1,0 +1,44 @@
+---
+import { siteConfig } from "@/lib/site-config";
+---
+
+<section class="relative px-6 py-24 md:py-32 border-t border-border overflow-hidden">
+	<div
+		class="absolute inset-0 -z-10"
+		style="background: radial-gradient(ellipse 50% 50% at 50% 100%, rgba(245, 158, 11, 0.12) 0%, transparent 70%);"
+	>
+	</div>
+
+	<div class="mx-auto max-w-2xl text-center">
+		<h2 class="reveal text-3xl md:text-5xl font-semibold tracking-tighter text-balance leading-[1.1]">
+			Get on the line, or<br />
+			<span class="bg-gradient-to-r from-accent to-[#F97316] bg-clip-text text-transparent">
+				help build it.
+			</span>
+		</h2>
+		<p
+			class="reveal mt-5 text-base md:text-lg text-text-secondary text-balance"
+			style="--reveal-delay: 150ms"
+		>
+			Two ways in. Join the waitlist if you want to be there day one. Apply
+			as a founding member if you want to help shape what we build.
+		</p>
+		<div
+			class="reveal mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
+			style="--reveal-delay: 250ms"
+		>
+			<a
+				href={siteConfig.ctaHref}
+				class="inline-flex h-11 items-center justify-center rounded-button bg-accent px-6 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+			>
+				{siteConfig.cta}
+			</a>
+			<a
+				href="/founding-member"
+				class="inline-flex h-11 items-center justify-center rounded-button border border-border bg-transparent px-6 text-sm font-medium text-text-primary transition-colors hover:bg-surface hover:border-border-hover"
+			>
+				Apply as founding member
+			</a>
+		</div>
+	</div>
+</section>

@@ -15,6 +15,18 @@
 
 # production
 /build
+/dist
+
+# astro
+.astro/
+
+# playwright
+/playwright-report/
+/test-results/
+
+# claude code / agent tooling
+.claude/
+.agents/
 
 # misc
 .DS_Store

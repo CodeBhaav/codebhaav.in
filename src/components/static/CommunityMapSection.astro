@@ -1,0 +1,36 @@
+---
+import { CommunityMap } from "@/components/react/sections/CommunityMap";
+---
+
+<section id="map" class="border-t border-border">
+  <div class="px-6 py-16 md:py-20 w-full mx-auto text-center">
+    <p
+      class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+    >
+      Where we're starting
+    </p>
+    <h2
+      class="reveal mt-4 text-3xl md:text-5xl font-semibold tracking-tighter text-balance"
+      style="--reveal-delay: 100ms"
+    >
+      Built in Amravati.<br />
+      <span
+        class="bg-gradient-to-r from-accent to-[#F97316] bg-clip-text text-transparent"
+      >
+        Open to your city next.
+      </span>
+    </h2>
+    <p
+      class="reveal mt-5 max-w-2xl mx-auto text-base md:text-lg text-text-secondary text-balance"
+      style="--reveal-delay: 200ms"
+    >
+      We're starting in tier-3 India because that's where most self-taught devs
+      are figuring it out alone. The community is online from day one. Your city
+      is on the list.
+    </p>
+  </div>
+
+  <div class="px-6 pb-16 md:pb-20">
+    <CommunityMap client:visible />
+  </div>
+</section>

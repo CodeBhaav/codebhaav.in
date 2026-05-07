@@ -1,0 +1,126 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/static/PageHeader.astro";
+
+const guidelines = [
+	{
+		k: "Be respectful",
+		v: "Treat every member with dignity. Harassment, discrimination, and personal attacks aren't tolerated.",
+	},
+	{
+		k: "No spam",
+		v: "Don't use the platform for unsolicited promotions or irrelevant content. Share things that genuinely add value.",
+	},
+	{
+		k: "Keep it authentic",
+		v: "Be honest about your experience. It's okay to be a beginner. Misrepresenting your skills undermines the trust we're building.",
+	},
+];
+
+const sections = [
+	{
+		eyebrow: "Purpose",
+		title: "Why this exists.",
+		body: "CodeBhaav is a community platform for self-taught developers to learn, build, and grow together. These terms protect both you and the community.",
+	},
+	{
+		eyebrow: "Content ownership",
+		title: "You keep your work.",
+		body: "You retain ownership of any content you create and share through CodeBhaav. By posting, you grant us a non-exclusive license to display and distribute it within the community. Open-source projects keep their own licenses.",
+	},
+	{
+		eyebrow: "Termination",
+		title: "Both sides can leave.",
+		body: "We reserve the right to suspend access if you violate these terms or community guidelines. Reasonable notice will be given except for severe or repeated violations. You can leave at any time by emailing us.",
+	},
+	{
+		eyebrow: "Liability",
+		title: "Provided as-is.",
+		body: 'CodeBhaav is provided "as is" without warranties. We don\'t guarantee 100% uptime or zero errors. Total liability shall not exceed the amount you have paid us, if any.',
+	},
+	{
+		eyebrow: "Changes",
+		title: "We'll tell you when these change.",
+		body: "We may update these terms from time to time. Significant changes will be announced via the platform or email. Continued use after changes are posted means you accept the updated terms.",
+	},
+];
+---
+
+<BaseLayout
+	title="Terms"
+	description="Terms and conditions for using CodeBhaav."
+	ogImage="/api/og.png?page=terms"
+>
+	<PageHeader
+		eyebrow="Terms of service"
+		title="The deal,"
+		titleAccent="in plain English."
+		description="By using CodeBhaav you agree to these terms. They exist to protect both you and the community. We've kept them short and readable on purpose."
+		meta="Effective date: May 2, 2025"
+	/>
+
+	<section class="px-6 py-20 md:py-24 border-b border-border">
+		<div class="max-w-3xl space-y-16">
+			{sections.map((s, i) => (
+				<div>
+					<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+						{s.eyebrow}
+					</p>
+					<h2
+						class="reveal mt-3 text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+						style={`--reveal-delay: ${100 + i * 30}ms`}
+					>
+						{s.title}
+					</h2>
+					<p
+						class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+						style={`--reveal-delay: ${200 + i * 30}ms`}
+					>
+						{s.body}
+					</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<section class="px-6 py-20 md:py-24 border-b border-border">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-accent">
+				Community guidelines
+			</p>
+			<h2
+				class="reveal mt-4 text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+				style="--reveal-delay: 100ms"
+			>
+				Three rules. Don't be a jerk.
+			</h2>
+			<ul class="reveal mt-8 divide-y divide-border border-y border-border" style="--reveal-delay: 200ms">
+				{guidelines.map((g) => (
+					<li class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-6 py-4">
+						<span class="font-mono text-xs uppercase tracking-wider text-text-muted">
+							{g.k}
+						</span>
+						<span class="text-sm text-text-secondary leading-relaxed">{g.v}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+
+	<section class="px-6 py-20 md:py-24">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+				Contact
+			</p>
+			<p
+				class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+				style="--reveal-delay: 100ms"
+			>
+				Questions about these terms? Email
+				<a href="mailto:pranav@codebhaav.in" class="text-accent hover:underline">
+					pranav@codebhaav.in
+				</a>.
+			</p>
+		</div>
+	</section>
+</BaseLayout>

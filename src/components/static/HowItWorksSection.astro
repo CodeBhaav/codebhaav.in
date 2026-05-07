@@ -1,0 +1,26 @@
+---
+import { HowItWorks } from "@/components/react/sections/HowItWorks";
+---
+
+<section id="how" class="border-t border-border">
+  <div class="px-6 py-16 md:py-20 w-full mx-auto text-center">
+    <p
+      class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted"
+    >
+      How it'll work
+    </p>
+    <h2
+      class="reveal mt-4 text-3xl md:text-5xl font-semibold tracking-tighter text-balance"
+      style="--reveal-delay: 100ms"
+    >
+      From signup to your<br />first shipped project.
+    </h2>
+    <p
+      class="reveal mt-5 max-w-2xl mx-auto text-base md:text-lg text-text-secondary text-balance"
+      style="--reveal-delay: 200ms"
+    >
+      Four steps. The wizard does the asking. You bring the curiosity.
+    </p>
+  </div>
+  <HowItWorks client:visible />
+</section>

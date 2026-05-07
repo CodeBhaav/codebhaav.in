@@ -1,0 +1,24 @@
+---
+import { siteConfig } from "@/lib/site-config";
+import { FAQList } from "@/components/react/sections/FAQList";
+import { KineticText } from "@/components/react/ui/kinetic-text";
+---
+
+<section class="px-6 py-24 md:py-32 border-t border-border">
+	<div class="mx-auto max-w-3xl">
+		<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+			FAQ
+		</p>
+		<div class="mt-4">
+			<KineticText
+				client:load
+				text="Things people ask."
+				className="text-3xl md:text-4xl font-semibold tracking-tighter text-balance"
+			/>
+		</div>
+
+		<div class="reveal mt-12" style="--reveal-delay: 200ms">
+			<FAQList items={siteConfig.faq} client:load />
+		</div>
+	</div>
+</section>

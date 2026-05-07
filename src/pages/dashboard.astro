@@ -1,0 +1,10 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import DashboardIsland from "@/components/react/islands/DashboardIsland";
+---
+<BaseLayout title="Dashboard">
+	<section class="mx-auto max-w-3xl px-6 py-16 md:py-24">
+		<h1 class="text-3xl font-bold tracking-tight mb-2">Your Dashboard</h1>
+		<DashboardIsland client:only="react" />
+	</section>
+</BaseLayout>

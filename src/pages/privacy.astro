@@ -1,0 +1,136 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/static/PageHeader.astro";
+
+const collected = [
+	{ k: "Name", v: "Your full name as provided during signup." },
+	{ k: "Email address", v: "Used for communication and account identification." },
+	{ k: "Role", v: "Your current role or occupation (e.g. student, developer)." },
+	{ k: "Interests", v: "Topics and technologies you're interested in." },
+	{ k: "Social handles", v: "Links to GitHub, Twitter, LinkedIn, or other profiles you choose to share." },
+	{ k: "Referral information", v: "Referral codes used during signup to track who invited you." },
+];
+
+const usage = [
+	{ k: "Waitlist management", v: "To manage your position and process founding member applications." },
+	{ k: "Updates and communication", v: "To send you relevant updates about CodeBhaav, including launch announcements." },
+	{ k: "Platform improvement", v: "To understand the community better and build features that serve you." },
+];
+
+const wontDo = [
+	{ k: "Sell your data", v: "We will never sell, rent, or trade your personal information to third parties." },
+	{ k: "Spam you", v: "We only send emails that are relevant. You can unsubscribe at any time." },
+	{ k: "Track you unnecessarily", v: "No invasive tracking, no data sold to advertisers. Analytics stay minimal and privacy-respecting." },
+];
+---
+
+<BaseLayout
+	title="Privacy"
+	description="How CodeBhaav collects, uses, and protects your data."
+	ogImage="/api/og.png?page=privacy"
+>
+	<PageHeader
+		eyebrow="Privacy policy"
+		title="Your data,"
+		titleAccent="treated like ours."
+		description="At CodeBhaav we take privacy seriously. This policy explains how we collect, use, and protect your information when you use our site and services."
+		meta="Effective date: May 2, 2025"
+	/>
+
+	<section class="px-6 py-20 md:py-24 border-b border-border">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+				What we collect
+			</p>
+			<h2
+				class="reveal mt-4 text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+				style="--reveal-delay: 100ms"
+			>
+				Only what we need to run the waitlist.
+			</h2>
+			<ul class="reveal mt-8 divide-y divide-border border-y border-border" style="--reveal-delay: 200ms">
+				{collected.map((item) => (
+					<li class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-2 md:gap-6 py-4">
+						<span class="font-mono text-xs uppercase tracking-wider text-text-muted">
+							{item.k}
+						</span>
+						<span class="text-sm text-text-secondary leading-relaxed">{item.v}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+
+	<section class="px-6 py-20 md:py-24 border-b border-border">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+				How we use it
+			</p>
+			<h2
+				class="reveal mt-4 text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+				style="--reveal-delay: 100ms"
+			>
+				To run the community, nothing more.
+			</h2>
+			<ul class="reveal mt-8 divide-y divide-border border-y border-border" style="--reveal-delay: 200ms">
+				{usage.map((item) => (
+					<li class="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-2 md:gap-6 py-4">
+						<span class="font-mono text-xs uppercase tracking-wider text-text-muted">
+							{item.k}
+						</span>
+						<span class="text-sm text-text-secondary leading-relaxed">{item.v}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+
+	<section class="px-6 py-20 md:py-24 border-b border-border">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-accent">
+				What we won't do
+			</p>
+			<h2
+				class="reveal mt-4 text-2xl md:text-3xl font-semibold tracking-tighter text-balance"
+				style="--reveal-delay: 100ms"
+			>
+				The opposite of what most platforms do.
+			</h2>
+			<ul class="reveal mt-8 divide-y divide-border border-y border-border" style="--reveal-delay: 200ms">
+				{wontDo.map((item) => (
+					<li class="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-2 md:gap-6 py-4">
+						<span class="font-mono text-xs uppercase tracking-wider text-text-muted">
+							{item.k}
+						</span>
+						<span class="text-sm text-text-secondary leading-relaxed">{item.v}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</section>
+
+	<section class="px-6 py-20 md:py-24">
+		<div class="max-w-3xl">
+			<p class="reveal font-mono text-[11px] uppercase tracking-wider text-text-muted">
+				Security & contact
+			</p>
+			<p
+				class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+				style="--reveal-delay: 100ms"
+			>
+				Your data is stored securely. We use HTTPS for all transmission. No
+				method is 100% secure, but we take reasonable measures to protect
+				against unauthorized access.
+			</p>
+			<p
+				class="reveal mt-4 text-base text-text-secondary leading-relaxed"
+				style="--reveal-delay: 200ms"
+			>
+				Questions about this policy or want to delete your data? Email
+				<a href="mailto:pranav@codebhaav.in" class="text-accent hover:underline">
+					pranav@codebhaav.in
+				</a>.
+			</p>
+		</div>
+	</section>
+</BaseLayout>

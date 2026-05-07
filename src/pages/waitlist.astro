@@ -1,0 +1,28 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import WaitlistIsland from "@/components/react/islands/WaitlistIsland";
+
+export const prerender = false;
+
+const ref = Astro.url.searchParams.get("ref")?.trim() || null;
+const ogImage = ref
+	? `/api/og.png?ref=${encodeURIComponent(ref)}`
+	: "/api/og.png?page=waitlist";
+const ogTitle = ref
+	? "You're invited to CodeBhaav"
+	: "Join the CodeBhaav waitlist";
+const ogDescription = ref
+	? "A community for self-taught developers. Code with Bhaav. Build with purpose."
+	: "Code with Bhaav. Build with purpose. A community for self-taught developers, starting in Amravati.";
+---
+<BaseLayout
+  title={ref ? "You're invited" : "Join the Waitlist"}
+  description={ogDescription}
+  ogImage={ogImage}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+>
+  <div class="min-h-[calc(100vh-65px)] w-full">
+    <WaitlistIsland client:only="react" />
+  </div>
+</BaseLayout>
