@@ -155,7 +155,7 @@ function WizardSidebar({
 }) {
   const meta = STEP_META[Math.min(step, STEP_META.length - 1)];
   return (
-    <aside className="relative flex flex-col justify-between border-b border-border bg-surface/30 px-6 py-6 sm:py-8 md:border-b-0 md:border-r md:px-8 md:py-12 lg:px-10 lg:py-14">
+    <aside className="relative flex flex-col justify-between border-b border-border bg-surface/30 px-4 sm:px-6 py-6 sm:py-8 md:border-b-0 md:border-r md:px-8 md:py-12 lg:px-10 lg:py-14">
       <WizardBackdrop />
       <div className="relative z-10">
         <p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
@@ -678,7 +678,7 @@ function SuccessScreen({
 
 function CenteredCard({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-6 py-16">
+    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 sm:px-6 py-16">
       <div className="w-full max-w-md text-center">{children}</div>
     </div>
   );
@@ -954,7 +954,7 @@ export function WaitlistWizard({
   // Success
   if (currentStep === 3) {
     return (
-      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-6 py-16">
+      <div className="flex min-h-[calc(100vh-64px)] items-center justify-center px-4 sm:px-6 py-16">
         <SuccessScreen
           name={userName.split(" ")[0] || "there"}
           referralCode={generatedCode}
@@ -972,7 +972,7 @@ export function WaitlistWizard({
         interestsCount={formData.interests.length}
       />
 
-      <section className="relative flex flex-col px-6 py-8 sm:py-10 md:px-10 md:py-12 lg:px-14 lg:py-16">
+      <section className="relative flex flex-col px-4 sm:px-6 py-8 sm:py-10 md:px-10 md:py-12 lg:px-14 lg:py-16">
         <div className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div

@@ -111,7 +111,7 @@ function MobileNav({
 						className="fixed top-16 left-0 right-0 bottom-0 z-50 w-full bg-background md:hidden overflow-y-auto"
 					>
 						<div className="flex h-full flex-col">
-							<nav className="flex-1 px-6 py-8 pb-32">
+							<nav className="flex-1 px-4 sm:px-6 py-8 pb-32">
 								<div className="flex flex-col gap-2">
 									{siteConfig.nav.links.map((link, index) => (
 										<motion.a

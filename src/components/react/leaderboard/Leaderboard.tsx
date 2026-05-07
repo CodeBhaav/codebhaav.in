@@ -16,7 +16,7 @@ export function Leaderboard() {
 
 	if (data.length === 0) {
 		return (
-			<div className="px-6 py-12 text-center text-sm text-text-secondary">
+			<div className="px-4 sm:px-6 py-12 text-center text-sm text-text-secondary">
 				No referrals yet. Be the first to share your code!
 			</div>
 		);
