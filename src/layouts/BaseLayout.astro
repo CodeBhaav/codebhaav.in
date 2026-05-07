@@ -12,6 +12,7 @@ interface Props {
 	ogImage?: string;
 	ogTitle?: string;
 	ogDescription?: string;
+	noindex?: boolean;
 }
 
 const {
@@ -21,6 +22,7 @@ const {
 	ogImage,
 	ogTitle,
 	ogDescription,
+	noindex = false,
 } = Astro.props;
 
 const siteUrl = Astro.site ?? new URL("https://codebhaav.in");
@@ -30,6 +32,30 @@ const resolvedOg = ogImage
 const resolvedOgTitle = ogTitle ?? `${title} · CodeBhaav`;
 const resolvedOgDesc = ogDescription ?? description;
 const canonical = Astro.url.toString();
+const isHome = Astro.url.pathname === "/";
+
+const websiteSchema = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: "CodeBhaav",
+	url: "https://www.codebhaav.in",
+	description:
+		"A community for self-taught developers to learn, build, and grow together.",
+};
+
+const organizationSchema = {
+	"@context": "https://schema.org",
+	"@type": "Organization",
+	name: "CodeBhaav",
+	url: "https://www.codebhaav.in",
+	logo: "https://www.codebhaav.in/logo.svg",
+	description:
+		"A community for self-taught developers, starting in Amravati, India.",
+	sameAs: [
+		"https://github.com/CodeBhaav",
+		"https://instagram.com/codebhaav",
+	],
+};
 ---
 
 <!doctype html>
@@ -40,6 +66,7 @@ const canonical = Astro.url.toString();
 		<meta name="description" content={description} />
 		<link rel="icon" type="image/svg+xml" href="/logo.svg" />
 		<link rel="canonical" href={canonical} />
+		{noindex && <meta name="robots" content="noindex,nofollow" />}
 		<title>{title} · CodeBhaav</title>
 
 		<!-- Open Graph -->
@@ -57,6 +84,20 @@ const canonical = Astro.url.toString();
 		<meta name="twitter:title" content={resolvedOgTitle} />
 		<meta name="twitter:description" content={resolvedOgDesc} />
 		<meta name="twitter:image" content={resolvedOg} />
+
+		<!-- JSON-LD structured data -->
+		<script
+			is:inline
+			type="application/ld+json"
+			set:html={JSON.stringify(websiteSchema)}
+		/>
+		{isHome && (
+			<script
+				is:inline
+				type="application/ld+json"
+				set:html={JSON.stringify(organizationSchema)}
+			/>
+		)}
 
 		<PostHog />
 		<GoogleAnalytics />

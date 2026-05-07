@@ -1,0 +1,40 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+	title="Page not found"
+	description="The page you were looking for doesn't exist."
+	noindex
+>
+	<section class="flex min-h-[calc(100vh-64px)] flex-col items-center justify-center px-4 sm:px-6 py-20 text-center">
+		<p class="font-mono text-[11px] uppercase tracking-wider text-accent">
+			404 · not found
+		</p>
+		<h1 class="mt-4 text-5xl md:text-7xl font-semibold tracking-tighter text-balance">
+			Lost in the<br />
+			<span class="bg-gradient-to-r from-accent to-[#F97316] bg-clip-text text-transparent">
+				wrong directory.
+			</span>
+		</h1>
+		<p class="mt-6 max-w-md text-base leading-relaxed text-text-secondary">
+			This page either moved, never existed, or was a typo. Either way — let's
+			get you back to something useful.
+		</p>
+
+		<div class="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+			<a
+				href="/"
+				class="inline-flex h-11 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px"
+			>
+				Back home
+			</a>
+			<a
+				href="/waitlist"
+				class="inline-flex h-11 items-center justify-center rounded-button border border-border bg-surface/40 backdrop-blur-sm px-6 text-sm font-medium text-text-primary transition-colors hover:bg-surface hover:border-border-hover"
+			>
+				Join the waitlist
+			</a>
+		</div>
+	</section>
+</BaseLayout>
