@@ -2,7 +2,6 @@
 import { siteConfig } from "@/lib/site-config";
 import { CornerPlus } from "@/components/react/ui/corner-plus";
 import { HeroBackdrop } from "@/components/react/sections/HeroBackdrop";
-import { HeroVisual } from "@/components/react/sections/HeroVisual";
 import { AnimatedShinyText } from "@/components/react/ui/animated-shiny-text";
 import { AuroraText } from "@/components/react/ui/aurora-text";
 
@@ -12,7 +11,7 @@ const titleLines = hero.title.split("\n");
 
 <section
 	id="hero"
-	class="relative px-4 sm:px-6 pt-20 md:pt-24 pb-24 md:pb-28 overflow-hidden"
+	class="relative px-4 sm:px-6 pt-20 md:pt-28 pb-24 md:pb-32 overflow-hidden"
 >
 	<CornerPlus position="bottom-left" className="text-text-muted/40" />
 	<CornerPlus position="bottom-right" className="text-text-muted/40" />
@@ -20,42 +19,48 @@ const titleLines = hero.title.split("\n");
 	<!-- flickering grid backdrop, masked -->
 	<HeroBackdrop client:load />
 
-	<!-- warm gold→ember radial spotlights -->
+	<!-- big centered radial spotlight -->
 	<div
 		class="absolute inset-0 -z-10 h-full w-full"
-		style="background: radial-gradient(ellipse 60% 55% at 30% 20%, rgba(252, 211, 77, 0.18) 0%, transparent 65%);"
+		style="background: radial-gradient(ellipse 70% 60% at 50% 35%, rgba(252, 211, 77, 0.20) 0%, transparent 60%);"
 	>
 	</div>
 	<div
 		class="absolute inset-0 -z-10 h-full w-full"
-		style="background: radial-gradient(ellipse 50% 50% at 75% 60%, rgba(249, 115, 22, 0.14) 0%, transparent 70%); filter: blur(40px);"
+		style="background: radial-gradient(ellipse 50% 50% at 50% 60%, rgba(249, 115, 22, 0.15) 0%, transparent 70%); filter: blur(60px);"
 	>
 	</div>
 
-	<div class="relative z-10 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-center max-w-6xl mx-auto">
-		<!-- LEFT: copy stack -->
-		<div class="flex flex-col items-start text-left">
-			<div class="reveal" style="--reveal-delay: 50ms">
-				<div class="group inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3 py-1.5 backdrop-blur-sm transition-colors hover:border-border-hover">
-					<span class="relative inline-flex">
-						<span class="absolute inline-flex size-2 animate-ping rounded-full bg-success opacity-75"></span>
-						<span class="relative inline-flex size-2 rounded-full bg-success"></span>
-					</span>
-					<AnimatedShinyText
-						client:load
-						className="font-mono text-[11px] uppercase tracking-wider !text-text-secondary"
-						shimmerWidth={120}
-					>
-						{hero.badge}
-					</AnimatedShinyText>
-				</div>
-			</div>
-
-			<h1
-				class="reveal mt-7 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-semibold tracking-tighter text-balance leading-[1.05]"
-				style="--reveal-delay: 150ms"
+	<div
+		class="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center"
+	>
+		<div class="reveal" style="--reveal-delay: 50ms">
+			<div
+				class="group inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-3 py-1.5 backdrop-blur-sm transition-colors hover:border-border-hover"
 			>
-				{titleLines.map((line, i) => (
+				<span class="relative inline-flex">
+					<span
+						class="absolute inline-flex size-2 animate-ping rounded-full bg-success opacity-75"
+					></span>
+					<span class="relative inline-flex size-2 rounded-full bg-success"
+					></span>
+				</span>
+				<AnimatedShinyText
+					client:load
+					className="font-mono text-[11px] uppercase tracking-wider !text-text-secondary"
+					shimmerWidth={120}
+				>
+					{hero.badge}
+				</AnimatedShinyText>
+			</div>
+		</div>
+
+		<h1
+			class="reveal mt-8 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-semibold tracking-tighter text-balance leading-[1.05]"
+			style="--reveal-delay: 150ms"
+		>
+			{
+				titleLines.map((line, i) => (
 					<>
 						{i === titleLines.length - 1 ? (
 							<AuroraText client:load>{line}</AuroraText>
@@ -64,60 +69,55 @@ const titleLines = hero.title.split("\n");
 						)}
 						{i < titleLines.length - 1 && <br />}
 					</>
-				))}
-			</h1>
+				))
+			}
+		</h1>
 
-			<p
-				class="reveal mt-6 max-w-xl text-base md:text-lg leading-relaxed text-text-secondary text-balance"
-				style="--reveal-delay: 250ms"
-			>
-				{hero.description}
-			</p>
+		<p
+			class="reveal mt-6 max-w-2xl text-base md:text-lg leading-relaxed text-text-secondary text-balance"
+			style="--reveal-delay: 250ms"
+		>
+			{hero.description}
+		</p>
 
-			<div
-				class="reveal mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
-				style="--reveal-delay: 350ms"
+		<div
+			class="reveal mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3"
+			style="--reveal-delay: 350ms"
+		>
+			<a
+				href={hero.cta.primary.href}
+				class="group inline-flex h-12 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-7 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px"
 			>
-				<a
-					href={hero.cta.primary.href}
-					class="group inline-flex h-11 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px"
+				{hero.cta.primary.text}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="ml-2 transition-transform group-hover:translate-x-0.5"
 				>
-					{hero.cta.primary.text}
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="ml-2 transition-transform group-hover:translate-x-0.5"
-					>
-						<path d="M5 12h14"></path>
-						<path d="m12 5 7 7-7 7"></path>
-					</svg>
-				</a>
-				<a
-					href={hero.cta.secondary.href}
-					class="inline-flex h-11 items-center justify-center rounded-button border border-border bg-surface/40 backdrop-blur-sm px-6 text-sm font-medium text-text-primary transition-colors hover:bg-surface hover:border-border-hover"
-				>
-					{hero.cta.secondary.text}
-				</a>
-			</div>
-
-			<p
-				class="reveal mt-6 font-mono text-[11px] uppercase tracking-wider text-text-muted"
-				style="--reveal-delay: 500ms"
+					<path d="M5 12h14"></path>
+					<path d="m12 5 7 7-7 7"></path>
+				</svg>
+			</a>
+			<a
+				href={hero.cta.secondary.href}
+				class="inline-flex h-12 items-center justify-center rounded-button border border-border bg-surface/40 backdrop-blur-sm px-7 text-sm font-medium text-text-primary transition-colors hover:bg-surface hover:border-border-hover"
 			>
-				{hero.footnote}
-			</p>
+				{hero.cta.secondary.text}
+			</a>
 		</div>
 
-		<!-- RIGHT: orbiting brand visual -->
-		<div class="reveal w-full" style="--reveal-delay: 400ms">
-			<HeroVisual client:load />
-		</div>
+		<p
+			class="reveal mt-8 font-mono text-[11px] uppercase tracking-wider text-text-muted"
+			style="--reveal-delay: 500ms"
+		>
+			{hero.footnote}
+		</p>
 	</div>
 </section>
