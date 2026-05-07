@@ -57,7 +57,7 @@ function CodeIcon() {
 
 function WorkflowCard({ step }: { step: WorkStep }) {
 	return (
-		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl w-full sm:min-w-[280px]">
+		<div className="bg-card border border-border rounded-card overflow-hidden shadow-2xl min-w-[200px] sm:min-w-[280px]">
 			<div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-surface">
 				<CodeIcon />
 				<span className="text-sm font-medium text-text-primary truncate">
@@ -77,52 +77,6 @@ function WorkflowCard({ step }: { step: WorkStep }) {
 	);
 }
 
-function VerticalConnector() {
-	return (
-		<motion.svg
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			transition={{ duration: 0.4 }}
-			className="pointer-events-none mx-auto block h-14 w-6 sm:hidden"
-			viewBox="0 0 24 56"
-			fill="none"
-		>
-			<motion.circle
-				initial={{ scale: 0 }}
-				animate={{ scale: 1 }}
-				transition={{ delay: 0.3, duration: 0.3 }}
-				cx="12"
-				cy="6"
-				r="4"
-				fill="#0a0a0b"
-				stroke="#F59E0B"
-				strokeWidth="2"
-				style={{ transformOrigin: "12px 6px" }}
-			/>
-			<motion.path
-				initial={{ pathLength: 0 }}
-				animate={{ pathLength: 1 }}
-				transition={{ duration: 0.7, ease: "easeInOut" }}
-				d="M12 10 L12 44"
-				stroke="#F59E0B"
-				strokeWidth="2"
-				strokeLinecap="round"
-			/>
-			<motion.path
-				initial={{ opacity: 0 }}
-				animate={{ opacity: 1 }}
-				transition={{ delay: 0.7 }}
-				d="M6 42 L12 50 L18 42"
-				stroke="#F59E0B"
-				strokeWidth="2"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				fill="none"
-			/>
-		</motion.svg>
-	);
-}
-
 function ConnectorSVG({
 	className,
 	flip = false,
@@ -135,7 +89,7 @@ function ConnectorSVG({
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			transition={{ duration: 0.4 }}
-			className={`pointer-events-none w-24 h-fit ${className ?? ""}`}
+			className={`pointer-events-none w-16 sm:w-24 h-fit ${className ?? ""}`}
 			viewBox="0 0 96 101"
 			fill="none"
 			style={flip ? { transform: "scaleX(-1)" } : undefined}
@@ -234,34 +188,28 @@ export function CommunityWorkflow() {
 					{visibleSteps >= 1 && (
 						<StepCard
 							step={steps[0]}
-							className="relative z-10 w-full sm:w-fit sm:-ml-2"
+							className="relative z-10 w-fit -ml-2"
 							showConnector={visibleSteps >= 2}
-							connectorClassName="hidden sm:block absolute -right-20 top-8"
+							connectorClassName="absolute -right-12 top-8 sm:-right-20"
 						/>
 					)}
-				</AnimatePresence>
-				<AnimatePresence>
-					{visibleSteps >= 2 && <VerticalConnector key="v1" />}
 				</AnimatePresence>
 				<AnimatePresence>
 					{visibleSteps >= 2 && (
 						<StepCard
 							step={steps[1]}
-							className="relative z-10 sm:mt-12 w-full sm:ml-auto sm:w-fit sm:-mr-4"
+							className="relative z-10 mt-8 sm:mt-12 ml-auto w-fit -mr-4"
 							showConnector={visibleSteps >= 3}
-							connectorClassName="hidden sm:block absolute -left-20 top-8"
+							connectorClassName="absolute -left-12 top-8 sm:-left-20"
 							flip
 						/>
 					)}
 				</AnimatePresence>
 				<AnimatePresence>
-					{visibleSteps >= 3 && <VerticalConnector key="v2" />}
-				</AnimatePresence>
-				<AnimatePresence>
 					{visibleSteps >= 3 && (
 						<StepCard
 							step={steps[2]}
-							className="relative z-10 sm:mt-12 max-w-xl w-full sm:w-auto sm:-ml-4"
+							className="relative z-10 mt-8 sm:mt-12 max-w-xl -ml-4"
 						/>
 					)}
 				</AnimatePresence>
