@@ -5,6 +5,7 @@ import {
 	mutation,
 	query,
 } from "./_generated/server";
+import { upsertProfileInternal } from "./userProfile";
 
 const statusValidator = v.union(
 	v.literal("submitted"),
@@ -51,16 +52,22 @@ export const submitApplication = mutation({
 			throw new Error("Application already submitted with this email");
 		}
 
-		const id = await ctx.db.insert("foundingMember", {
-			clerkUserId: args.clerkUserId,
-			name: args.name,
-			email: args.email,
+		// Profile fields go to userProfile (one source of truth, reusable
+		// for future forms). Only application-specific fields land on the
+		// foundingMember row.
+		await upsertProfileInternal(ctx, args.clerkUserId, {
 			whatsapp: args.whatsapp,
 			github: args.github,
 			linkedin: args.linkedin,
 			portfolio: args.portfolio,
 			skills: args.skills,
 			experience: args.experience,
+		});
+
+		const id = await ctx.db.insert("foundingMember", {
+			clerkUserId: args.clerkUserId,
+			name: args.name,
+			email: args.email,
 			motivation: args.motivation,
 			commitment: args.commitment,
 			ideas: args.ideas,

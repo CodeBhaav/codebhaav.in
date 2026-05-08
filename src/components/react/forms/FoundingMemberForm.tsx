@@ -1,4 +1,4 @@
-import { useState, useCallback, type FormEvent } from "react";
+import { useState, useCallback, useEffect, type FormEvent } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useUser } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
@@ -233,12 +233,34 @@ export function FoundingMemberForm() {
 		api.foundingMember.getMyApplication,
 		clerkUserId ? { clerkUserId } : "skip",
 	);
+	const profile = useQuery(
+		api.userProfile.getMyProfile,
+		clerkUserId ? { clerkUserId } : "skip",
+	);
 
 	const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
+	const [profilePrefilled, setProfilePrefilled] = useState(false);
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+
+	// Prefill profile fields once when the user's profile arrives. Only
+	// runs once so the user can clear/edit fields without them snapping
+	// back to the saved value mid-typing.
+	useEffect(() => {
+		if (profilePrefilled || !profile) return;
+		setFormData((prev) => ({
+			...prev,
+			whatsapp: profile.whatsapp || prev.whatsapp,
+			github: profile.github || prev.github,
+			linkedin: profile.linkedin || prev.linkedin,
+			portfolio: profile.portfolio || prev.portfolio,
+			skills: profile.skills || prev.skills,
+			experience: profile.experience || prev.experience,
+		}));
+		setProfilePrefilled(true);
+	}, [profile, profilePrefilled]);
 
 	const updateField = useCallback(
 		(field: keyof FormData, value: string) => {

@@ -18,6 +18,7 @@ import type * as emails_TestEmail from "../emails/TestEmail.js";
 import type * as emails_WaitlistEmail from "../emails/WaitlistEmail.js";
 import type * as foundingMember from "../foundingMember.js";
 import type * as http from "../http.js";
+import type * as userProfile from "../userProfile.js";
 import type * as waitlist from "../waitlist.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   "emails/WaitlistEmail": typeof emails_WaitlistEmail;
   foundingMember: typeof foundingMember;
   http: typeof http;
+  userProfile: typeof userProfile;
   waitlist: typeof waitlist;
 }>;
 
