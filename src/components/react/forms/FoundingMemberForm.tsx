@@ -129,25 +129,72 @@ const STATUS_CONFIG: Record<
 	},
 };
 
-function StatusView({
-	status,
-	submittedAt,
-}: {
-	status: ApplicationStatus;
-	submittedAt: number;
-}) {
-	const config = STATUS_CONFIG[status];
-	const dateLabel = new Date(submittedAt).toLocaleDateString("en-US", {
+const TONE_CLASSES = {
+	neutral: "border-[#1F1F23] bg-[#111113] text-[#a1a1aa]",
+	positive: "border-[#f59e0b] bg-[#241906] text-[#fbbf24]",
+	negative: "border-[#3a1a1a] bg-[#1a0a0a] text-[#f87171]",
+} as const;
+
+function formatDate(ms: number): string {
+	return new Date(ms).toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
 	});
+}
 
-	const toneClasses = {
-		neutral: "border-[#1F1F23] bg-[#111113] text-[#a1a1aa]",
-		positive: "border-[#f59e0b] bg-[#241906] text-[#fbbf24]",
-		negative: "border-[#3a1a1a] bg-[#1a0a0a] text-[#f87171]",
-	}[config.tone];
+function ReadOnlyField({
+	label,
+	value,
+	multiline,
+}: {
+	label: string;
+	value: string;
+	multiline?: boolean;
+}) {
+	const display = value && value.trim().length > 0 ? value : "—";
+	return (
+		<div>
+			<p className="mb-1.5 text-sm font-medium text-[#FAFAFA]">{label}</p>
+			<div
+				className={cn(
+					"rounded-[6px] border border-[#1F1F23] bg-[#0a0a0a] px-4 py-3 text-sm text-[#a1a1aa]",
+					multiline ? "whitespace-pre-wrap" : "truncate",
+				)}
+			>
+				{display}
+			</div>
+		</div>
+	);
+}
+
+interface ProfileSnapshot {
+	whatsapp: string;
+	github: string;
+	linkedin: string;
+	portfolio: string;
+	skills: string;
+	experience: string;
+}
+
+interface ApplicationSnapshot {
+	status: ApplicationStatus;
+	submittedAt: number;
+	name: string;
+	email: string;
+	motivation: string;
+	commitment: string;
+	ideas: string;
+}
+
+function LockedSubmissionView({
+	application,
+	profile,
+}: {
+	application: ApplicationSnapshot;
+	profile: ProfileSnapshot;
+}) {
+	const config = STATUS_CONFIG[application.status];
 
 	return (
 		<div>
@@ -156,7 +203,7 @@ function StatusView({
 					Founding Member Application
 				</h1>
 				<p className="mt-2 text-sm text-[#71717A]">
-					Submitted on {dateLabel}
+					Submitted on {formatDate(application.submittedAt)}
 				</p>
 			</div>
 
@@ -168,7 +215,7 @@ function StatusView({
 					<span
 						className={cn(
 							"inline-flex items-center rounded-[4px] border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider",
-							toneClasses,
+							TONE_CLASSES[config.tone],
 						)}
 					>
 						{config.label}
@@ -179,7 +226,54 @@ function StatusView({
 				</p>
 			</div>
 
-			<div className="mt-6 flex flex-wrap gap-3">
+			<div className="mt-10 space-y-10">
+				<fieldset className="space-y-5">
+					<SectionHeader>What you submitted · Personal</SectionHeader>
+					<ReadOnlyField label="Full Name" value={application.name} />
+					<ReadOnlyField label="Email Address" value={application.email} />
+					<ReadOnlyField label="WhatsApp Number" value={profile.whatsapp} />
+					<div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+						<ReadOnlyField label="GitHub Profile" value={profile.github} />
+						<ReadOnlyField label="LinkedIn Profile" value={profile.linkedin} />
+					</div>
+					<ReadOnlyField label="Portfolio / Website" value={profile.portfolio} />
+				</fieldset>
+
+				<fieldset className="space-y-5">
+					<SectionHeader>What you submitted · Skills & Experience</SectionHeader>
+					<ReadOnlyField
+						label="What skills can you contribute?"
+						value={profile.skills}
+						multiline
+					/>
+					<ReadOnlyField
+						label="Your relevant experience"
+						value={profile.experience}
+						multiline
+					/>
+				</fieldset>
+
+				<fieldset className="space-y-5">
+					<SectionHeader>What you submitted · Motivation</SectionHeader>
+					<ReadOnlyField
+						label="Why do you want to be a founding member?"
+						value={application.motivation}
+						multiline
+					/>
+					<ReadOnlyField
+						label="Weekly time commitment"
+						value={application.commitment}
+						multiline
+					/>
+					<ReadOnlyField
+						label="Ideas for the community"
+						value={application.ideas}
+						multiline
+					/>
+				</fieldset>
+			</div>
+
+			<div className="mt-10 flex flex-wrap gap-3">
 				<a
 					href="/dashboard"
 					className="inline-flex h-9 items-center rounded-button border border-border px-4 text-[13px] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
@@ -219,6 +313,27 @@ function SignedOutView() {
 	);
 }
 
+function EditableNotice({ submittedAt }: { submittedAt: number }) {
+	return (
+		<div className="mb-8 rounded-[6px] border border-[#1F1F23] bg-[#0a0a0a] p-4">
+			<div className="flex flex-wrap items-center gap-3">
+				<span
+					className={cn(
+						"inline-flex items-center rounded-[4px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
+						TONE_CLASSES.neutral,
+					)}
+				>
+					Submitted
+				</span>
+				<p className="text-xs text-[#a1a1aa]">
+					Submitted on {formatDate(submittedAt)}. You can edit any field
+					until review starts.
+				</p>
+			</div>
+		</div>
+	);
+}
+
 export function FoundingMemberForm() {
 	const { user, isLoaded } = useUser();
 	const clerkUserId = user?.id;
@@ -229,6 +344,7 @@ export function FoundingMemberForm() {
 	const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
 	const submitApplication = useMutation(api.foundingMember.submitApplication);
+	const updateApplication = useMutation(api.foundingMember.updateMyApplication);
 	const existingApplication = useQuery(
 		api.foundingMember.getMyApplication,
 		clerkUserId ? { clerkUserId } : "skip",
@@ -239,28 +355,55 @@ export function FoundingMemberForm() {
 	);
 
 	const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
-	const [profilePrefilled, setProfilePrefilled] = useState(false);
+	const [prefilled, setPrefilled] = useState(false);
 	const [errors, setErrors] = useState<FormErrors>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isSuccess, setIsSuccess] = useState(false);
+	const [savedAt, setSavedAt] = useState<number | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
-	// Prefill profile fields once when the user's profile arrives. Only
-	// runs once so the user can clear/edit fields without them snapping
-	// back to the saved value mid-typing.
+	const isEditingSubmitted =
+		existingApplication !== null &&
+		existingApplication !== undefined &&
+		(existingApplication.status ?? "submitted") === "submitted";
+	const isLocked =
+		existingApplication !== null &&
+		existingApplication !== undefined &&
+		(existingApplication.status ?? "submitted") !== "submitted";
+
+	// One-shot prefill of profile (always) + application fields (when
+	// editing a still-submitted application). Runs once both queries have
+	// resolved so we don't snap fields back to saved values mid-typing.
 	useEffect(() => {
-		if (profilePrefilled || !profile) return;
+		if (prefilled) return;
+		if (profile === undefined || existingApplication === undefined) return;
+
 		setFormData((prev) => ({
 			...prev,
-			whatsapp: profile.whatsapp || prev.whatsapp,
-			github: profile.github || prev.github,
-			linkedin: profile.linkedin || prev.linkedin,
-			portfolio: profile.portfolio || prev.portfolio,
-			skills: profile.skills || prev.skills,
-			experience: profile.experience || prev.experience,
+			whatsapp: profile?.whatsapp || prev.whatsapp,
+			github: profile?.github || prev.github,
+			linkedin: profile?.linkedin || prev.linkedin,
+			portfolio: profile?.portfolio || prev.portfolio,
+			skills: profile?.skills || prev.skills,
+			experience: profile?.experience || prev.experience,
+			motivation: isEditingSubmitted
+				? (existingApplication?.motivation ?? prev.motivation)
+				: prev.motivation,
+			commitment: isEditingSubmitted
+				? (existingApplication?.commitment ?? prev.commitment)
+				: prev.commitment,
+			ideas: isEditingSubmitted
+				? (existingApplication?.ideas ?? prev.ideas)
+				: prev.ideas,
 		}));
-		setProfilePrefilled(true);
-	}, [profile, profilePrefilled]);
+		setPrefilled(true);
+	}, [profile, existingApplication, isEditingSubmitted, prefilled]);
+
+	// Auto-clear the inline "Saved" notice after 3 seconds.
+	useEffect(() => {
+		if (savedAt === null) return;
+		const t = setTimeout(() => setSavedAt(null), 3000);
+		return () => clearTimeout(t);
+	}, [savedAt]);
 
 	const updateField = useCallback(
 		(field: keyof FormData, value: string) => {
@@ -293,28 +436,44 @@ export function FoundingMemberForm() {
 
 			setIsSubmitting(true);
 			try {
-				await submitApplication({
-					clerkUserId,
-					name: fullName,
-					email,
-					whatsapp: formData.whatsapp.trim(),
-					github: formData.github.trim() || undefined,
-					linkedin: formData.linkedin.trim() || undefined,
-					portfolio: formData.portfolio.trim() || undefined,
-					skills: formData.skills.trim(),
-					experience: formData.experience.trim(),
-					motivation: formData.motivation.trim(),
-					commitment: formData.commitment.trim(),
-					ideas: formData.ideas.trim() || undefined,
-				});
-				posthog.identify(email, { name: fullName, email });
-				posthog.capture("founding_member_application_submitted", {
-					has_github: Boolean(formData.github.trim()),
-					has_linkedin: Boolean(formData.linkedin.trim()),
-					has_portfolio: Boolean(formData.portfolio.trim()),
-					has_ideas: Boolean(formData.ideas.trim()),
-				});
-				setIsSuccess(true);
+				if (isEditingSubmitted) {
+					await updateApplication({
+						clerkUserId,
+						whatsapp: formData.whatsapp.trim(),
+						github: formData.github.trim() || undefined,
+						linkedin: formData.linkedin.trim() || undefined,
+						portfolio: formData.portfolio.trim() || undefined,
+						skills: formData.skills.trim(),
+						experience: formData.experience.trim(),
+						motivation: formData.motivation.trim(),
+						commitment: formData.commitment.trim(),
+						ideas: formData.ideas.trim() || undefined,
+					});
+					posthog.capture("founding_member_application_updated");
+				} else {
+					await submitApplication({
+						clerkUserId,
+						name: fullName,
+						email,
+						whatsapp: formData.whatsapp.trim(),
+						github: formData.github.trim() || undefined,
+						linkedin: formData.linkedin.trim() || undefined,
+						portfolio: formData.portfolio.trim() || undefined,
+						skills: formData.skills.trim(),
+						experience: formData.experience.trim(),
+						motivation: formData.motivation.trim(),
+						commitment: formData.commitment.trim(),
+						ideas: formData.ideas.trim() || undefined,
+					});
+					posthog.identify(email, { name: fullName, email });
+					posthog.capture("founding_member_application_submitted", {
+						has_github: Boolean(formData.github.trim()),
+						has_linkedin: Boolean(formData.linkedin.trim()),
+						has_portfolio: Boolean(formData.portfolio.trim()),
+						has_ideas: Boolean(formData.ideas.trim()),
+					});
+				}
+				setSavedAt(Date.now());
 			} catch (err) {
 				const message =
 					err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -325,7 +484,15 @@ export function FoundingMemberForm() {
 				setIsSubmitting(false);
 			}
 		},
-		[clerkUserId, fullName, email, formData, submitApplication],
+		[
+			clerkUserId,
+			fullName,
+			email,
+			formData,
+			isEditingSubmitted,
+			submitApplication,
+			updateApplication,
+		],
 	);
 
 	if (!isLoaded) {
@@ -341,7 +508,7 @@ export function FoundingMemberForm() {
 		return <SignedOutView />;
 	}
 
-	if (existingApplication === undefined) {
+	if (existingApplication === undefined || profile === undefined) {
 		return (
 			<div className="py-12">
 				<div className="h-6 w-64 animate-pulse rounded-[4px] bg-[#1F1F23]" />
@@ -350,20 +517,37 @@ export function FoundingMemberForm() {
 		);
 	}
 
-	if (existingApplication) {
+	if (isLocked && existingApplication) {
 		return (
-			<StatusView
-				status={existingApplication.status as ApplicationStatus}
-				submittedAt={existingApplication.submittedAt}
+			<LockedSubmissionView
+				application={{
+					status: (existingApplication.status ?? "submitted") as ApplicationStatus,
+					submittedAt: existingApplication.submittedAt,
+					name: existingApplication.name,
+					email: existingApplication.email,
+					motivation: existingApplication.motivation,
+					commitment: existingApplication.commitment,
+					ideas: existingApplication.ideas ?? "",
+				}}
+				profile={{
+					whatsapp: profile?.whatsapp ?? "",
+					github: profile?.github ?? "",
+					linkedin: profile?.linkedin ?? "",
+					portfolio: profile?.portfolio ?? "",
+					skills: profile?.skills ?? "",
+					experience: profile?.experience ?? "",
+				}}
 			/>
 		);
 	}
 
-	if (isSuccess) {
-		return (
-			<StatusView status="submitted" submittedAt={Date.now()} />
-		);
-	}
+	const submitButtonLabel = isSubmitting
+		? isEditingSubmitted
+			? "Saving..."
+			: "Submitting..."
+		: isEditingSubmitted
+			? "Save changes"
+			: "Submit Application";
 
 	return (
 		<div>
@@ -373,11 +557,17 @@ export function FoundingMemberForm() {
 					<h1 className="text-3xl font-bold tracking-tight text-[#FAFAFA]">
 						Founding Member Application
 					</h1>
-					<span className="rounded-[4px] border border-[#1F1F23] bg-[#111113] px-2 py-1 text-xs text-[#71717A]">
-						Limited spots available
-					</span>
+					{!isEditingSubmitted && (
+						<span className="rounded-[4px] border border-[#1F1F23] bg-[#111113] px-2 py-1 text-xs text-[#71717A]">
+							Limited spots available
+						</span>
+					)}
 				</div>
 			</div>
+
+			{isEditingSubmitted && existingApplication && (
+				<EditableNotice submittedAt={existingApplication.submittedAt} />
+			)}
 
 			{/* Form */}
 			<form onSubmit={handleSubmit} className="space-y-10" noValidate>
@@ -566,23 +756,31 @@ export function FoundingMemberForm() {
 
 				{/* Legal + Submit */}
 				<div className="space-y-4">
-					<p className="text-xs leading-relaxed text-[#52525B]">
-						By submitting this application, you agree to our{" "}
-						<a
-							href="/terms"
-							className="text-[#71717A] underline transition-colors hover:text-[#FAFAFA]"
-						>
-							Terms of Service
-						</a>{" "}
-						and{" "}
-						<a
-							href="/privacy"
-							className="text-[#71717A] underline transition-colors hover:text-[#FAFAFA]"
-						>
-							Privacy Policy
-						</a>
-						. We will review your application and get back to you within 7 days.
-					</p>
+					{!isEditingSubmitted && (
+						<p className="text-xs leading-relaxed text-[#52525B]">
+							By submitting this application, you agree to our{" "}
+							<a
+								href="/terms"
+								className="text-[#71717A] underline transition-colors hover:text-[#FAFAFA]"
+							>
+								Terms of Service
+							</a>{" "}
+							and{" "}
+							<a
+								href="/privacy"
+								className="text-[#71717A] underline transition-colors hover:text-[#FAFAFA]"
+							>
+								Privacy Policy
+							</a>
+							. We will review your application and get back to you within 7 days.
+						</p>
+					)}
+
+					{savedAt && (
+						<div className="rounded-[6px] border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3 text-sm text-[#86efac]">
+							{isEditingSubmitted ? "Changes saved." : "Application submitted."}
+						</div>
+					)}
 
 					{submitError && (
 						<div className="rounded-[6px] border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-400">
@@ -595,7 +793,7 @@ export function FoundingMemberForm() {
 						disabled={isSubmitting}
 						className="inline-flex h-11 w-full items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
 					>
-						{isSubmitting ? "Submitting..." : "Submit Application"}
+						{submitButtonLabel}
 					</button>
 				</div>
 			</form>

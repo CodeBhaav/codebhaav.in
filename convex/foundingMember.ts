@@ -101,7 +101,70 @@ export const getMyApplication = query({
 			status: application.status ?? "submitted",
 			name: application.name,
 			email: application.email,
+			motivation: application.motivation,
+			commitment: application.commitment,
+			ideas: application.ideas ?? "",
 		};
+	},
+});
+
+/**
+ * Edit a previously-submitted application. Only allowed while the
+ * application is still in the `submitted` state — once a reviewer has
+ * touched it (in_review / accepted / rejected), edits are locked so the
+ * decision artifact is stable.
+ *
+ * Authorization is the same trust-the-clerkUserId pattern as
+ * submitApplication; tighten when ConvexProviderWithClerk lands.
+ */
+export const updateMyApplication = mutation({
+	args: {
+		clerkUserId: v.string(),
+		whatsapp: v.string(),
+		github: v.optional(v.string()),
+		linkedin: v.optional(v.string()),
+		portfolio: v.optional(v.string()),
+		skills: v.string(),
+		experience: v.string(),
+		motivation: v.string(),
+		commitment: v.string(),
+		ideas: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const application = await ctx.db
+			.query("foundingMember")
+			.withIndex("by_clerkUserId", (q) =>
+				q.eq("clerkUserId", args.clerkUserId),
+			)
+			.first();
+
+		if (!application) {
+			throw new Error("No application found to update");
+		}
+
+		const status = application.status ?? "submitted";
+		if (status !== "submitted") {
+			throw new Error(
+				`Application is in '${status}' state and can no longer be edited`,
+			);
+		}
+
+		await upsertProfileInternal(ctx, args.clerkUserId, {
+			whatsapp: args.whatsapp,
+			github: args.github,
+			linkedin: args.linkedin,
+			portfolio: args.portfolio,
+			skills: args.skills,
+			experience: args.experience,
+		});
+
+		await ctx.db.patch(application._id, {
+			motivation: args.motivation,
+			commitment: args.commitment,
+			ideas: args.ideas,
+		});
+
+		return { id: application._id };
 	},
 });
 
