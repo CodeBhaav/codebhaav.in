@@ -187,24 +187,37 @@ interface ApplicationSnapshot {
 	ideas: string;
 }
 
-function LockedSubmissionView({
+function SubmissionSummary({
 	application,
 	profile,
+	onEdit,
 }: {
 	application: ApplicationSnapshot;
 	profile: ProfileSnapshot;
+	onEdit?: () => void;
 }) {
 	const config = STATUS_CONFIG[application.status];
 
 	return (
 		<div>
-			<div className="mb-8">
-				<h1 className="text-3xl font-bold tracking-tight text-[#FAFAFA]">
-					Founding Member Application
-				</h1>
-				<p className="mt-2 text-sm text-[#71717A]">
-					Submitted on {formatDate(application.submittedAt)}
-				</p>
+			<div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+				<div>
+					<h1 className="text-3xl font-bold tracking-tight text-[#FAFAFA]">
+						Founding Member Application
+					</h1>
+					<p className="mt-2 text-sm text-[#71717A]">
+						Submitted on {formatDate(application.submittedAt)}
+					</p>
+				</div>
+				{onEdit && (
+					<button
+						type="button"
+						onClick={onEdit}
+						className="inline-flex h-9 items-center rounded-button border border-[#1F1F23] bg-[#111113] px-4 text-[13px] font-medium text-[#FAFAFA] transition-colors hover:border-[#f59e0b] hover:text-[#f59e0b]"
+					>
+						Edit application
+					</button>
+				)}
 			</div>
 
 			<div className="rounded-[6px] border border-[#1F1F23] bg-[#0a0a0a] p-6">
@@ -224,6 +237,11 @@ function LockedSubmissionView({
 				<p className="mt-4 text-sm leading-relaxed text-[#a1a1aa]">
 					{config.description}
 				</p>
+				{onEdit && application.status === "submitted" && (
+					<p className="mt-3 text-xs text-[#71717A]">
+						You can still edit any field until review starts.
+					</p>
+				)}
 			</div>
 
 			<div className="mt-10 space-y-10">
@@ -360,19 +378,21 @@ export function FoundingMemberForm() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [savedAt, setSavedAt] = useState<number | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [isEditMode, setIsEditMode] = useState(false);
 
-	const isEditingSubmitted =
-		existingApplication !== null &&
-		existingApplication !== undefined &&
-		(existingApplication.status ?? "submitted") === "submitted";
-	const isLocked =
-		existingApplication !== null &&
-		existingApplication !== undefined &&
-		(existingApplication.status ?? "submitted") !== "submitted";
+	const hasApplication =
+		existingApplication !== null && existingApplication !== undefined;
+	const applicationStatus = hasApplication
+		? ((existingApplication.status ?? "submitted") as ApplicationStatus)
+		: null;
+	const canEdit = applicationStatus === "submitted";
+	// "Editing-submitted" means: there's an existing submitted application
+	// AND the user is currently in edit mode. Otherwise it's a new submission.
+	const isEditingSubmitted = hasApplication && isEditMode && canEdit;
 
-	// One-shot prefill of profile (always) + application fields (when
-	// editing a still-submitted application). Runs once both queries have
-	// resolved so we don't snap fields back to saved values mid-typing.
+	// One-shot prefill of profile (always) + application fields (when an
+	// application exists). Runs once both queries have resolved so we
+	// don't snap fields back to saved values mid-typing.
 	useEffect(() => {
 		if (prefilled) return;
 		if (profile === undefined || existingApplication === undefined) return;
@@ -385,18 +405,47 @@ export function FoundingMemberForm() {
 			portfolio: profile?.portfolio || prev.portfolio,
 			skills: profile?.skills || prev.skills,
 			experience: profile?.experience || prev.experience,
-			motivation: isEditingSubmitted
+			motivation: hasApplication
 				? (existingApplication?.motivation ?? prev.motivation)
 				: prev.motivation,
-			commitment: isEditingSubmitted
+			commitment: hasApplication
 				? (existingApplication?.commitment ?? prev.commitment)
 				: prev.commitment,
-			ideas: isEditingSubmitted
+			ideas: hasApplication
 				? (existingApplication?.ideas ?? prev.ideas)
 				: prev.ideas,
 		}));
 		setPrefilled(true);
-	}, [profile, existingApplication, isEditingSubmitted, prefilled]);
+	}, [profile, existingApplication, hasApplication, prefilled]);
+
+	// Re-sync formData with the latest saved values. Used when entering
+	// edit mode (so we discard any stale local edits) and when cancelling
+	// edit mode.
+	const resetFormToSaved = useCallback(() => {
+		setFormData({
+			whatsapp: profile?.whatsapp ?? "",
+			github: profile?.github ?? "",
+			linkedin: profile?.linkedin ?? "",
+			portfolio: profile?.portfolio ?? "",
+			skills: profile?.skills ?? "",
+			experience: profile?.experience ?? "",
+			motivation: existingApplication?.motivation ?? "",
+			commitment: existingApplication?.commitment ?? "",
+			ideas: existingApplication?.ideas ?? "",
+		});
+		setErrors({});
+		setSubmitError(null);
+	}, [profile, existingApplication]);
+
+	const handleEnterEdit = useCallback(() => {
+		resetFormToSaved();
+		setIsEditMode(true);
+	}, [resetFormToSaved]);
+
+	const handleCancelEdit = useCallback(() => {
+		resetFormToSaved();
+		setIsEditMode(false);
+	}, [resetFormToSaved]);
 
 	// Auto-clear the inline "Saved" notice after 3 seconds.
 	useEffect(() => {
@@ -474,6 +523,11 @@ export function FoundingMemberForm() {
 					});
 				}
 				setSavedAt(Date.now());
+				// After a successful save while editing, drop back to the
+				// summary view so the user sees their (now-updated) data.
+				if (isEditingSubmitted) {
+					setIsEditMode(false);
+				}
 			} catch (err) {
 				const message =
 					err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -517,11 +571,15 @@ export function FoundingMemberForm() {
 		);
 	}
 
-	if (isLocked && existingApplication) {
+	// Show the summary view by default when an application exists. Only
+	// flip to the editable form when the user explicitly clicks Edit (and
+	// the application is still in 'submitted' state — review-locked
+	// applications never get an Edit affordance).
+	if (hasApplication && !isEditMode && existingApplication) {
 		return (
-			<LockedSubmissionView
+			<SubmissionSummary
 				application={{
-					status: (existingApplication.status ?? "submitted") as ApplicationStatus,
+					status: applicationStatus ?? "submitted",
 					submittedAt: existingApplication.submittedAt,
 					name: existingApplication.name,
 					email: existingApplication.email,
@@ -537,6 +595,7 @@ export function FoundingMemberForm() {
 					skills: profile?.skills ?? "",
 					experience: profile?.experience ?? "",
 				}}
+				onEdit={canEdit ? handleEnterEdit : undefined}
 			/>
 		);
 	}
@@ -788,13 +847,25 @@ export function FoundingMemberForm() {
 						</div>
 					)}
 
-					<button
-						type="submit"
-						disabled={isSubmitting}
-						className="inline-flex h-11 w-full items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
-					>
-						{submitButtonLabel}
-					</button>
+					<div className="flex flex-wrap gap-3">
+						<button
+							type="submit"
+							disabled={isSubmitting}
+							className="inline-flex h-11 w-full items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
+						>
+							{submitButtonLabel}
+						</button>
+						{isEditingSubmitted && (
+							<button
+								type="button"
+								onClick={handleCancelEdit}
+								disabled={isSubmitting}
+								className="inline-flex h-11 w-full items-center justify-center rounded-button border border-[#1F1F23] bg-[#0a0a0a] px-6 text-sm font-medium text-[#a1a1aa] transition-colors hover:border-[#52525b] hover:text-[#fafafa] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
+							>
+								Cancel
+							</button>
+						)}
+					</div>
 				</div>
 			</form>
 		</div>
