@@ -9,6 +9,10 @@
  */
 
 import type * as email from "../email.js";
+import type * as emails_FoundingMemberEmail from "../emails/FoundingMemberEmail.js";
+import type * as emails_Layout from "../emails/Layout.js";
+import type * as emails_TestEmail from "../emails/TestEmail.js";
+import type * as emails_WaitlistEmail from "../emails/WaitlistEmail.js";
 import type * as foundingMember from "../foundingMember.js";
 import type * as waitlist from "../waitlist.js";
 
@@ -20,6 +24,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   email: typeof email;
+  "emails/FoundingMemberEmail": typeof emails_FoundingMemberEmail;
+  "emails/Layout": typeof emails_Layout;
+  "emails/TestEmail": typeof emails_TestEmail;
+  "emails/WaitlistEmail": typeof emails_WaitlistEmail;
   foundingMember: typeof foundingMember;
   waitlist: typeof waitlist;
 }>;
