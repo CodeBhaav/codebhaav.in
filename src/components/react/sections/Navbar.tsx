@@ -210,7 +210,13 @@ export function Navbar() {
 						href="/"
 						className="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary"
 					>
-						<span className="inline-block size-2 rounded-full bg-accent" />
+						<img
+							src="/logo-mark.svg"
+							alt=""
+							width={28}
+							height={28}
+							className="size-7"
+						/>
 						CodeBhaav
 					</a>
 
