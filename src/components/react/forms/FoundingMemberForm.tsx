@@ -389,7 +389,9 @@ export function FoundingMemberForm() {
 						<FieldLabel htmlFor="name">Full Name</FieldLabel>
 						<input
 							id="name"
+							name="name"
 							type="text"
+							autoComplete="name"
 							value={fullName}
 							readOnly
 							className={LOCKED_INPUT_CLASS}
@@ -403,7 +405,9 @@ export function FoundingMemberForm() {
 						<FieldLabel htmlFor="email">Email Address</FieldLabel>
 						<input
 							id="email"
+							name="email"
 							type="email"
+							autoComplete="email"
 							value={email}
 							readOnly
 							className={LOCKED_INPUT_CLASS}
@@ -419,7 +423,10 @@ export function FoundingMemberForm() {
 						</FieldLabel>
 						<input
 							id="whatsapp"
+							name="phone"
 							type="tel"
+							autoComplete="tel"
+							inputMode="tel"
 							placeholder="+91 98765 43210"
 							value={formData.whatsapp}
 							onChange={(e) => updateField("whatsapp", e.target.value)}
@@ -433,7 +440,10 @@ export function FoundingMemberForm() {
 							<FieldLabel htmlFor="github">GitHub Profile</FieldLabel>
 							<input
 								id="github"
+								name="github"
 								type="url"
+								autoComplete="url"
+								inputMode="url"
 								placeholder="https://github.com/username"
 								value={formData.github}
 								onChange={(e) => updateField("github", e.target.value)}
@@ -444,7 +454,10 @@ export function FoundingMemberForm() {
 							<FieldLabel htmlFor="linkedin">LinkedIn Profile</FieldLabel>
 							<input
 								id="linkedin"
+								name="linkedin"
 								type="url"
+								autoComplete="url"
+								inputMode="url"
 								placeholder="https://linkedin.com/in/username"
 								value={formData.linkedin}
 								onChange={(e) => updateField("linkedin", e.target.value)}
@@ -457,7 +470,10 @@ export function FoundingMemberForm() {
 						<FieldLabel htmlFor="portfolio">Portfolio / Website</FieldLabel>
 						<input
 							id="portfolio"
+							name="portfolio"
 							type="url"
+							autoComplete="url"
+							inputMode="url"
 							placeholder="https://yoursite.com"
 							value={formData.portfolio}
 							onChange={(e) => updateField("portfolio", e.target.value)}
