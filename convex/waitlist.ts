@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
 function generateReferralCode(name: string): string {
@@ -88,6 +89,13 @@ export const submitWaitlist = mutation({
 
 		const allEntries = await ctx.db.query("waitlist").collect();
 		const position = allEntries.length;
+
+		await ctx.scheduler.runAfter(0, internal.email.sendWaitlistEmail, {
+			name: args.name,
+			email: args.email,
+			position,
+			referralCode,
+		});
 
 		return { id, referralCode, position };
 	},

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import { mutation } from "./_generated/server";
 
 export const submitApplication = mutation({
@@ -37,6 +38,11 @@ export const submitApplication = mutation({
 			motivation: args.motivation,
 			commitment: args.commitment,
 			ideas: args.ideas,
+		});
+
+		await ctx.scheduler.runAfter(0, internal.email.sendFoundingMemberEmail, {
+			name: args.name,
+			email: args.email,
 		});
 
 		return { id };
