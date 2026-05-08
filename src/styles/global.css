@@ -265,3 +265,84 @@
     transition: none;
   }
 }
+
+/* Footer brand credit: "[mark] CodeBhaav by" → hover → "[mark] Pranav Bhatkar" */
+.brand-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.4s ease;
+}
+
+.brand-credit:hover {
+  color: var(--text-primary);
+}
+
+.brand-credit-mark {
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* Each colored path gets a thin highlight stroke that "draws" on hover */
+.brand-credit-mark-path {
+  stroke: #fef3c7;
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.brand-credit:hover .brand-credit-mark-path {
+  stroke-dashoffset: 0;
+}
+
+/* Stagger the draw so paths trace in sequence, not all at once */
+.brand-credit-mark-path:nth-of-type(1) { transition-delay: 0s; }
+.brand-credit-mark-path:nth-of-type(2) { transition-delay: 0.08s; }
+.brand-credit-mark-path:nth-of-type(4) { transition-delay: 0.16s; }
+.brand-credit-mark-path:nth-of-type(5) { transition-delay: 0.24s; }
+
+.brand-credit-text {
+  position: relative;
+  display: inline-grid;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.brand-credit-default,
+.brand-credit-reveal {
+  grid-area: 1 / 1;
+  transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.brand-credit-default {
+  transform: translateX(0);
+}
+
+.brand-credit-reveal {
+  transform: translateX(101%);
+}
+
+.brand-credit:hover .brand-credit-default {
+  transform: translateX(-101%);
+}
+
+.brand-credit:hover .brand-credit-reveal {
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-credit-mark-path,
+  .brand-credit-default,
+  .brand-credit-reveal {
+    transition: none;
+  }
+  .brand-credit:hover .brand-credit-mark-path {
+    stroke-dashoffset: 1;
+  }
+}
