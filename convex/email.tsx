@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import * as React from "react";
 import { Resend } from "resend";
 import { internalAction } from "./_generated/server";
+import { AccountWelcomeEmail } from "./emails/AccountWelcomeEmail";
 import { FoundingMemberEmail } from "./emails/FoundingMemberEmail";
 import { TestEmail } from "./emails/TestEmail";
 import { WaitlistEmail } from "./emails/WaitlistEmail";
@@ -61,6 +62,27 @@ export const sendFoundingMemberEmail = internalAction({
 			to: args.email,
 			subject: `We received your application, ${args.name}`,
 			react: <FoundingMemberEmail name={args.name} />,
+		});
+
+		if (result.error) {
+			throw new Error(
+				`Resend error: ${result.error.name} — ${result.error.message}`,
+			);
+		}
+	},
+});
+
+export const sendAccountWelcomeEmail = internalAction({
+	args: {
+		name: v.string(),
+		email: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		const result = await getResend().emails.send({
+			from: FROM,
+			to: args.email,
+			subject: `Welcome to CodeBhaav, ${args.name}`,
+			react: <AccountWelcomeEmail name={args.name} />,
 		});
 
 		if (result.error) {
