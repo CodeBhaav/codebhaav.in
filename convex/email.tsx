@@ -5,6 +5,8 @@ import * as React from "react";
 import { Resend } from "resend";
 import { internalAction } from "./_generated/server";
 import { AccountWelcomeEmail } from "./emails/AccountWelcomeEmail";
+import { ApplicationAcceptedEmail } from "./emails/ApplicationAcceptedEmail";
+import { ApplicationRejectedEmail } from "./emails/ApplicationRejectedEmail";
 import { FoundingMemberEmail } from "./emails/FoundingMemberEmail";
 import { TestEmail } from "./emails/TestEmail";
 import { WaitlistEmail } from "./emails/WaitlistEmail";
@@ -62,6 +64,48 @@ export const sendFoundingMemberEmail = internalAction({
 			to: args.email,
 			subject: `We received your application, ${args.name}`,
 			react: <FoundingMemberEmail name={args.name} />,
+		});
+
+		if (result.error) {
+			throw new Error(
+				`Resend error: ${result.error.name} — ${result.error.message}`,
+			);
+		}
+	},
+});
+
+export const sendApplicationAcceptedEmail = internalAction({
+	args: {
+		name: v.string(),
+		email: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		const result = await getResend().emails.send({
+			from: FROM,
+			to: args.email,
+			subject: `You're in. Welcome to the CodeBhaav founding cohort`,
+			react: <ApplicationAcceptedEmail name={args.name} />,
+		});
+
+		if (result.error) {
+			throw new Error(
+				`Resend error: ${result.error.name} — ${result.error.message}`,
+			);
+		}
+	},
+});
+
+export const sendApplicationRejectedEmail = internalAction({
+	args: {
+		name: v.string(),
+		email: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		const result = await getResend().emails.send({
+			from: FROM,
+			to: args.email,
+			subject: `An update on your CodeBhaav founding-member application`,
+			react: <ApplicationRejectedEmail name={args.name} />,
 		});
 
 		if (result.error) {

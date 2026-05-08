@@ -34,5 +34,16 @@ export default defineSchema({
 		motivation: v.string(),
 		commitment: v.string(),
 		ideas: v.optional(v.string()),
-	}).index("by_email", ["email"]),
+		clerkUserId: v.optional(v.string()),
+		status: v.optional(
+			v.union(
+				v.literal("submitted"),
+				v.literal("in_review"),
+				v.literal("accepted"),
+				v.literal("rejected"),
+			),
+		),
+	})
+		.index("by_email", ["email"])
+		.index("by_clerkUserId", ["clerkUserId"]),
 });

@@ -10,6 +10,8 @@
 
 import type * as email from "../email.js";
 import type * as emails_AccountWelcomeEmail from "../emails/AccountWelcomeEmail.js";
+import type * as emails_ApplicationAcceptedEmail from "../emails/ApplicationAcceptedEmail.js";
+import type * as emails_ApplicationRejectedEmail from "../emails/ApplicationRejectedEmail.js";
 import type * as emails_FoundingMemberEmail from "../emails/FoundingMemberEmail.js";
 import type * as emails_Layout from "../emails/Layout.js";
 import type * as emails_TestEmail from "../emails/TestEmail.js";
@@ -27,6 +29,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   email: typeof email;
   "emails/AccountWelcomeEmail": typeof emails_AccountWelcomeEmail;
+  "emails/ApplicationAcceptedEmail": typeof emails_ApplicationAcceptedEmail;
+  "emails/ApplicationRejectedEmail": typeof emails_ApplicationRejectedEmail;
   "emails/FoundingMemberEmail": typeof emails_FoundingMemberEmail;
   "emails/Layout": typeof emails_Layout;
   "emails/TestEmail": typeof emails_TestEmail;
