@@ -93,8 +93,8 @@ export function WaitlistEmail({
 					color: tokens.textSecondary,
 				}}
 			>
-				Want to climb the list? Share your invite link &mdash; every signup
-				that uses it bumps you up.
+				Want to climb the list? Share your invite link. Every signup that
+				uses it bumps you up.
 			</Text>
 
 			<Button

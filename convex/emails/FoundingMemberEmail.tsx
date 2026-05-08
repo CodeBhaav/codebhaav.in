@@ -34,7 +34,7 @@ export function FoundingMemberEmail({ name }: FoundingMemberEmailProps) {
 				}}
 			>
 				Thanks for applying to the CodeBhaav founding cohort. We read every
-				application personally &mdash; expect to hear back within a few days.
+				application personally. Expect to hear back within a few days.
 			</Text>
 			<Text
 				style={{
