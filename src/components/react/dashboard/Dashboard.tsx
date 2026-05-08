@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export function Dashboard() {
 	const { user, isLoaded } = useUser();
 	const email = user?.primaryEmailAddress?.emailAddress;
+	const clerkUserId = user?.id;
 
 	const position = useQuery(
 		api.waitlist.getPosition,
@@ -16,6 +17,10 @@ export function Dashboard() {
 	const referrals = useQuery(
 		api.waitlist.getReferrals,
 		email ? { email } : "skip",
+	);
+	const application = useQuery(
+		api.foundingMember.getMyApplication,
+		clerkUserId ? { clerkUserId } : "skip",
 	);
 
 	if (!isLoaded) {
@@ -83,10 +88,86 @@ export function Dashboard() {
 
 			<ReferralCard link={referralLink} />
 
+			{application && (
+				<div className="mt-6">
+					<ApplicationStatusCard
+						status={application.status as ApplicationStatus}
+					/>
+				</div>
+			)}
+
 			<div className="mt-6 flex flex-wrap gap-3">
 				<QuickLink href="/leaderboard" label="View Leaderboard" />
-				<QuickLink href="/founding-member" label="Apply as Founding Member" />
+				{!application && (
+					<QuickLink
+						href="/founding-member"
+						label="Apply as Founding Member"
+					/>
+				)}
+				{application && (
+					<QuickLink
+						href="/founding-member"
+						label="View Application"
+					/>
+				)}
 			</div>
+		</div>
+	);
+}
+
+type ApplicationStatus = "submitted" | "in_review" | "accepted" | "rejected";
+
+const STATUS_BADGE: Record<
+	ApplicationStatus,
+	{ label: string; description: string; tone: "neutral" | "positive" | "negative" }
+> = {
+	submitted: {
+		label: "Submitted",
+		description: "Application received. We'll review within 7 days.",
+		tone: "neutral",
+	},
+	in_review: {
+		label: "In review",
+		description: "Your application is being reviewed by the team.",
+		tone: "neutral",
+	},
+	accepted: {
+		label: "Accepted",
+		description: "You're in. Watch your inbox for next steps.",
+		tone: "positive",
+	},
+	rejected: {
+		label: "Not selected",
+		description:
+			"You're still on the waitlist and the platform opens to everyone soon.",
+		tone: "negative",
+	},
+};
+
+function ApplicationStatusCard({ status }: { status: ApplicationStatus }) {
+	const config = STATUS_BADGE[status];
+	const toneClasses = {
+		neutral: "border-[#1F1F23] bg-[#111113] text-[#a1a1aa]",
+		positive: "border-[#f59e0b] bg-[#241906] text-[#fbbf24]",
+		negative: "border-[#3a1a1a] bg-[#1a0a0a] text-[#f87171]",
+	}[config.tone];
+
+	return (
+		<div className="rounded-card border border-border bg-card p-5">
+			<div className="flex items-center justify-between gap-3">
+				<p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+					Founding Member Application
+				</p>
+				<span
+					className={cn(
+						"inline-flex items-center rounded-[4px] border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider",
+						toneClasses,
+					)}
+				>
+					{config.label}
+				</span>
+			</div>
+			<p className="mt-3 text-sm text-text-secondary">{config.description}</p>
 		</div>
 	);
 }

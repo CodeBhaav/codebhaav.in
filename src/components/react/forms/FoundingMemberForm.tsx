@@ -1,11 +1,11 @@
 import { useState, useCallback, type FormEvent } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import { useUser } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
 import posthog from "posthog-js";
+import { cn } from "@/lib/utils";
 
 interface FormData {
-	name: string;
-	email: string;
 	whatsapp: string;
 	github: string;
 	linkedin: string;
@@ -18,8 +18,6 @@ interface FormData {
 }
 
 interface FormErrors {
-	name?: string;
-	email?: string;
 	whatsapp?: string;
 	skills?: string;
 	experience?: string;
@@ -28,8 +26,6 @@ interface FormErrors {
 }
 
 const INITIAL_FORM_DATA: FormData = {
-	name: "",
-	email: "",
 	whatsapp: "",
 	github: "",
 	linkedin: "",
@@ -41,21 +37,9 @@ const INITIAL_FORM_DATA: FormData = {
 	ideas: "",
 };
 
-function isValidEmail(email: string): boolean {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 function validateForm(data: FormData): FormErrors {
 	const errors: FormErrors = {};
 
-	if (!data.name.trim()) {
-		errors.name = "Name is required";
-	}
-	if (!data.email.trim()) {
-		errors.email = "Email is required";
-	} else if (!isValidEmail(data.email)) {
-		errors.email = "Please enter a valid email address";
-	}
 	if (!data.whatsapp.trim()) {
 		errors.whatsapp = "WhatsApp number is required";
 	}
@@ -73,48 +57,6 @@ function validateForm(data: FormData): FormErrors {
 	}
 
 	return errors;
-}
-
-function CheckmarkIcon() {
-	return (
-		<svg
-			width="48"
-			height="48"
-			viewBox="0 0 48 48"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<circle cx="24" cy="24" r="24" fill="#22C55E" fillOpacity="0.1" />
-			<circle cx="24" cy="24" r="16" fill="#22C55E" fillOpacity="0.2" />
-			<path
-				d="M17 24L22 29L31 19"
-				stroke="#22C55E"
-				strokeWidth="2.5"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	);
-}
-
-function SuccessScreen() {
-	return (
-		<div className="flex flex-col items-center py-16 text-center">
-			<CheckmarkIcon />
-			<h2 className="mt-6 text-2xl font-bold text-[#FAFAFA]">
-				Application received!
-			</h2>
-			<p className="mt-2 text-sm text-[#71717A]">
-				We'll review and get back to you within 7 days.
-			</p>
-			<a
-				href="/"
-				className="mt-8 text-sm font-medium text-[#F59E0B] transition-colors hover:text-[#D97706]"
-			>
-				Return home &rarr;
-			</a>
-		</div>
-	);
 }
 
 function SectionHeader({ children }: { children: string }) {
@@ -152,8 +94,145 @@ const INPUT_CLASS =
 
 const TEXTAREA_CLASS = `${INPUT_CLASS} resize-y`;
 
+const LOCKED_INPUT_CLASS =
+	"w-full bg-[#0a0a0a] border border-[#1F1F23] rounded-[6px] px-4 py-3 text-[#a1a1aa] text-sm cursor-not-allowed";
+
+type ApplicationStatus = "submitted" | "in_review" | "accepted" | "rejected";
+
+const STATUS_CONFIG: Record<
+	ApplicationStatus,
+	{ label: string; tone: "neutral" | "positive" | "negative"; description: string }
+> = {
+	submitted: {
+		label: "Submitted",
+		tone: "neutral",
+		description:
+			"We've received your application. We'll review it and get back to you within 7 days.",
+	},
+	in_review: {
+		label: "In review",
+		tone: "neutral",
+		description:
+			"Your application is being reviewed by the team. We'll be in touch soon.",
+	},
+	accepted: {
+		label: "Accepted",
+		tone: "positive",
+		description:
+			"You're in. Welcome to the founding cohort. Watch your inbox for next steps.",
+	},
+	rejected: {
+		label: "Not selected",
+		tone: "negative",
+		description:
+			"We weren't able to bring you into the founding cohort this time. You're still on the waitlist.",
+	},
+};
+
+function StatusView({
+	status,
+	submittedAt,
+}: {
+	status: ApplicationStatus;
+	submittedAt: number;
+}) {
+	const config = STATUS_CONFIG[status];
+	const dateLabel = new Date(submittedAt).toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+
+	const toneClasses = {
+		neutral: "border-[#1F1F23] bg-[#111113] text-[#a1a1aa]",
+		positive: "border-[#f59e0b] bg-[#241906] text-[#fbbf24]",
+		negative: "border-[#3a1a1a] bg-[#1a0a0a] text-[#f87171]",
+	}[config.tone];
+
+	return (
+		<div>
+			<div className="mb-8">
+				<h1 className="text-3xl font-bold tracking-tight text-[#FAFAFA]">
+					Founding Member Application
+				</h1>
+				<p className="mt-2 text-sm text-[#71717A]">
+					Submitted on {dateLabel}
+				</p>
+			</div>
+
+			<div className="rounded-[6px] border border-[#1F1F23] bg-[#0a0a0a] p-6">
+				<p className="font-mono text-[11px] uppercase tracking-wider text-[#71717A]">
+					Status
+				</p>
+				<div className="mt-3 flex items-center gap-3">
+					<span
+						className={cn(
+							"inline-flex items-center rounded-[4px] border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider",
+							toneClasses,
+						)}
+					>
+						{config.label}
+					</span>
+				</div>
+				<p className="mt-4 text-sm leading-relaxed text-[#a1a1aa]">
+					{config.description}
+				</p>
+			</div>
+
+			<div className="mt-6 flex flex-wrap gap-3">
+				<a
+					href="/dashboard"
+					className="inline-flex h-9 items-center rounded-button border border-border px-4 text-[13px] text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+				>
+					Back to dashboard &rarr;
+				</a>
+			</div>
+		</div>
+	);
+}
+
+function SignedOutView() {
+	return (
+		<div className="rounded-[6px] border border-[#1F1F23] bg-[#0a0a0a] p-8 text-center">
+			<h2 className="text-xl font-semibold text-[#FAFAFA]">
+				Sign in to apply
+			</h2>
+			<p className="mt-2 text-sm text-[#a1a1aa]">
+				Founding member applications are tied to your account. Sign in or
+				create one to continue.
+			</p>
+			<div className="mt-6 flex flex-wrap justify-center gap-3">
+				<a
+					href="/sign-in?redirect_url=/founding-member"
+					className="inline-flex h-10 items-center justify-center rounded-button bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-6 text-sm font-semibold text-[#1a1208] shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] ring-1 ring-[#D97706] transition-all hover:from-[#FBBF24] hover:to-[#F59E0B]"
+				>
+					Sign In
+				</a>
+				<a
+					href="/sign-up?redirect_url=/founding-member"
+					className="inline-flex h-10 items-center justify-center rounded-button border border-border px-6 text-sm font-medium text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+				>
+					Create Account
+				</a>
+			</div>
+		</div>
+	);
+}
+
 export function FoundingMemberForm() {
+	const { user, isLoaded } = useUser();
+	const clerkUserId = user?.id;
+	const fullName = [user?.firstName, user?.lastName]
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+	const email = user?.primaryEmailAddress?.emailAddress ?? "";
+
 	const submitApplication = useMutation(api.foundingMember.submitApplication);
+	const existingApplication = useQuery(
+		api.foundingMember.getMyApplication,
+		clerkUserId ? { clerkUserId } : "skip",
+	);
 
 	const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
 	const [errors, setErrors] = useState<FormErrors>({});
@@ -179,6 +258,11 @@ export function FoundingMemberForm() {
 			e.preventDefault();
 			setSubmitError(null);
 
+			if (!clerkUserId || !fullName || !email) {
+				setSubmitError("Account info missing. Please try signing in again.");
+				return;
+			}
+
 			const validationErrors = validateForm(formData);
 			if (Object.keys(validationErrors).length > 0) {
 				setErrors(validationErrors);
@@ -188,8 +272,9 @@ export function FoundingMemberForm() {
 			setIsSubmitting(true);
 			try {
 				await submitApplication({
-					name: formData.name.trim(),
-					email: formData.email.trim(),
+					clerkUserId,
+					name: fullName,
+					email,
 					whatsapp: formData.whatsapp.trim(),
 					github: formData.github.trim() || undefined,
 					linkedin: formData.linkedin.trim() || undefined,
@@ -200,10 +285,7 @@ export function FoundingMemberForm() {
 					commitment: formData.commitment.trim(),
 					ideas: formData.ideas.trim() || undefined,
 				});
-					posthog.identify(formData.email.trim(), {
-					name: formData.name.trim(),
-					email: formData.email.trim(),
-				});
+				posthog.identify(email, { name: fullName, email });
 				posthog.capture("founding_member_application_submitted", {
 					has_github: Boolean(formData.github.trim()),
 					has_linkedin: Boolean(formData.linkedin.trim()),
@@ -221,11 +303,44 @@ export function FoundingMemberForm() {
 				setIsSubmitting(false);
 			}
 		},
-		[formData, submitApplication],
+		[clerkUserId, fullName, email, formData, submitApplication],
 	);
 
+	if (!isLoaded) {
+		return (
+			<div className="py-12">
+				<div className="h-6 w-64 animate-pulse rounded-[4px] bg-[#1F1F23]" />
+				<div className="mt-6 h-32 animate-pulse rounded-[6px] bg-[#1F1F23]" />
+			</div>
+		);
+	}
+
+	if (!user) {
+		return <SignedOutView />;
+	}
+
+	if (existingApplication === undefined) {
+		return (
+			<div className="py-12">
+				<div className="h-6 w-64 animate-pulse rounded-[4px] bg-[#1F1F23]" />
+				<div className="mt-6 h-32 animate-pulse rounded-[6px] bg-[#1F1F23]" />
+			</div>
+		);
+	}
+
+	if (existingApplication) {
+		return (
+			<StatusView
+				status={existingApplication.status as ApplicationStatus}
+				submittedAt={existingApplication.submittedAt}
+			/>
+		);
+	}
+
 	if (isSuccess) {
-		return <SuccessScreen />;
+		return (
+			<StatusView status="submitted" submittedAt={Date.now()} />
+		);
 	}
 
 	return (
@@ -249,18 +364,31 @@ export function FoundingMemberForm() {
 					<SectionHeader>Personal Information</SectionHeader>
 
 					<div>
-						<FieldLabel htmlFor="name" required>
-							Full Name
-						</FieldLabel>
+						<FieldLabel htmlFor="name">Full Name</FieldLabel>
 						<input
 							id="name"
 							type="text"
-							placeholder="Your full name"
-							value={formData.name}
-							onChange={(e) => updateField("name", e.target.value)}
-							className={INPUT_CLASS}
+							value={fullName}
+							readOnly
+							className={LOCKED_INPUT_CLASS}
 						/>
-						<FieldError message={errors.name} />
+						<p className="mt-1 text-xs text-[#52525B]">
+							From your account. Update it in your profile.
+						</p>
+					</div>
+
+					<div>
+						<FieldLabel htmlFor="email">Email Address</FieldLabel>
+						<input
+							id="email"
+							type="email"
+							value={email}
+							readOnly
+							className={LOCKED_INPUT_CLASS}
+						/>
+						<p className="mt-1 text-xs text-[#52525B]">
+							From your account. Update it in your profile.
+						</p>
 					</div>
 
 					<div>
@@ -276,21 +404,6 @@ export function FoundingMemberForm() {
 							className={INPUT_CLASS}
 						/>
 						<FieldError message={errors.whatsapp} />
-					</div>
-
-					<div>
-						<FieldLabel htmlFor="email" required>
-							Email Address
-						</FieldLabel>
-						<input
-							id="email"
-							type="email"
-							placeholder="you@example.com"
-							value={formData.email}
-							onChange={(e) => updateField("email", e.target.value)}
-							className={INPUT_CLASS}
-						/>
-						<FieldError message={errors.email} />
 					</div>
 
 					<div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
