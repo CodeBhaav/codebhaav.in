@@ -1,0 +1,10 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import WaitlistPanelIsland from "@/components/react/islands/WaitlistPanelIsland";
+
+export const prerender = false;
+---
+
+<AdminLayout title="Waitlist" active="waitlist">
+	<WaitlistPanelIsland client:only="react" />
+</AdminLayout>

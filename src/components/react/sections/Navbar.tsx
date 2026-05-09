@@ -1,34 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useUser } from "@clerk/clerk-react";
 import { siteConfig } from "@/lib/site-config";
 import { Button } from "@/components/react/ui/button";
 
-// Read Clerk's `__client_uat` cookie to detect signed-in state without
-// mounting another ClerkProvider in the navbar tree (which conflicts with
-// page-level providers like DashboardIsland).
-function useSignedInFromCookie(): boolean {
-	const [signedIn, setSignedIn] = useState(false);
-
-	useEffect(() => {
-		const check = () => {
-			if (typeof document === "undefined") return;
-			const cookies = document.cookie.split("; ");
-			const uat = cookies
-				.find((c) => c.startsWith("__client_uat="))
-				?.slice("__client_uat=".length);
-			setSignedIn(Boolean(uat) && uat !== "0");
-		};
-		check();
-		// Re-check when tab regains focus, so post-login the navbar updates.
-		window.addEventListener("focus", check);
-		document.addEventListener("visibilitychange", check);
-		return () => {
-			window.removeEventListener("focus", check);
-			document.removeEventListener("visibilitychange", check);
-		};
-	}, []);
-
-	return signedIn;
+// Detect signed-in + admin status from the Clerk user object. The Navbar is
+// wrapped in a ClerkProvider via NavbarIsland, so useUser() works here.
+// Admin = publicMetadata.role === "admin", set in Clerk dashboard.
+function useNavbarAuth(): { signedIn: boolean; isAdmin: boolean } {
+	const { isSignedIn, user } = useUser();
+	const role = (user?.publicMetadata as { role?: string } | null)?.role;
+	return {
+		signedIn: Boolean(isSignedIn),
+		isAdmin: role === "admin",
+	};
 }
 
 function HamburgerButton({
@@ -83,10 +68,12 @@ function MobileNav({
 	isOpen,
 	onClose,
 	signedIn,
+	isAdmin,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
 	signedIn: boolean;
+	isAdmin: boolean;
 }) {
 	const ctaHref = signedIn ? "/dashboard" : siteConfig.ctaHref;
 	const ctaText = signedIn ? "Go to Dashboard" : siteConfig.cta;
@@ -138,6 +125,30 @@ function MobileNav({
 											{link.name}
 										</motion.a>
 									))}
+									{isAdmin && (
+										<motion.a
+											href="/admin"
+											onClick={onClose}
+											initial={{
+												opacity: 0,
+												y: -20,
+												filter: "blur(8px)",
+											}}
+											animate={{
+												opacity: 1,
+												y: 0,
+												filter: "blur(0px)",
+											}}
+											transition={{
+												delay: siteConfig.nav.links.length * 0.06,
+												duration: 0.5,
+												ease: [0.16, 1, 0.3, 1],
+											}}
+											className="block py-3 font-mono text-base uppercase tracking-widest text-accent transition-colors hover:text-accent-hover"
+										>
+											Admin →
+										</motion.a>
+									)}
 								</div>
 							</nav>
 							<div className="sticky bottom-0 w-full p-6 bg-background border-t border-border">
@@ -169,7 +180,7 @@ export function Navbar() {
 	const [isVisible, setIsVisible] = useState(true);
 	const [lastScrollY, setLastScrollY] = useState(0);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const signedIn = useSignedInFromCookie();
+	const { signedIn, isAdmin } = useNavbarAuth();
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -223,6 +234,14 @@ export function Navbar() {
 					<DesktopNav />
 
 					<div className="flex items-center gap-2">
+						{isAdmin && (
+							<a
+								href="/admin"
+								className="hidden md:inline-flex h-9 items-center rounded-button border border-[#f59e0b]/40 bg-[#241906] px-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-accent transition-colors hover:bg-[#3a2807]"
+							>
+								Admin
+							</a>
+						)}
 						<Button asChild size="sm" className="hidden md:inline-flex">
 							<a href={ctaHref}>{ctaText}</a>
 						</Button>
@@ -238,6 +257,7 @@ export function Navbar() {
 				isOpen={isMobileMenuOpen}
 				onClose={() => setIsMobileMenuOpen(false)}
 				signedIn={signedIn}
+				isAdmin={isAdmin}
 			/>
 		</>
 	);

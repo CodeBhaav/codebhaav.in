@@ -1,6 +1,6 @@
 ---
 import "@/styles/global.css";
-import { Navbar } from "@/components/react/sections/Navbar";
+import NavbarIsland from "@/components/react/islands/NavbarIsland";
 import Footer from "@/components/static/Footer.astro";
 import PostHog from "@/components/posthog.astro";
 import GoogleAnalytics from "@/components/google-analytics.astro";
@@ -103,7 +103,7 @@ const organizationSchema = {
 		<GoogleAnalytics />
 	</head>
 	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
-		{!hideChrome && <Navbar client:load />}
+		{!hideChrome && <NavbarIsland client:load />}
 
 		<div class="mx-auto max-w-7xl border-x border-border min-h-screen">
 			<main class={hideChrome ? "" : "pt-16"}>
