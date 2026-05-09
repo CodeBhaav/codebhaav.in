@@ -25,6 +25,18 @@ const {
 	noindex = false,
 } = Astro.props;
 
+// Compute navbar auth state server-side via Clerk middleware. On
+// prerendered pages the middleware doesn't run, so this gracefully falls
+// back to "logged-out / not-admin" — fine because anonymous viewers
+// shouldn't see the admin link anyway.
+const auth =
+	typeof Astro.locals.auth === "function" ? Astro.locals.auth() : null;
+const navIsSignedIn = Boolean(auth?.userId);
+const navSessionClaims = auth?.sessionClaims as
+	| { metadata?: { role?: string } }
+	| undefined;
+const navIsAdmin = navSessionClaims?.metadata?.role === "admin";
+
 const siteUrl = Astro.site ?? new URL("https://codebhaav.in");
 const resolvedOg = ogImage
 	? new URL(ogImage, Astro.url).toString()
@@ -103,7 +115,15 @@ const organizationSchema = {
 		<GoogleAnalytics />
 	</head>
 	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
-		{!hideChrome && <NavbarIsland client:load />}
+		{
+			!hideChrome && (
+				<NavbarIsland
+					isSignedIn={navIsSignedIn}
+					isAdmin={navIsAdmin}
+					client:load
+				/>
+			)
+		}
 
 		<div class="mx-auto max-w-7xl border-x border-border min-h-screen">
 			<main class={hideChrome ? "" : "pt-16"}>

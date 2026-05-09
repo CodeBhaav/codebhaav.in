@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useUser } from "@clerk/clerk-react";
 import { siteConfig } from "@/lib/site-config";
 import { Button } from "@/components/react/ui/button";
 
-// Detect signed-in + admin status from the Clerk user object. The Navbar is
-// wrapped in a ClerkProvider via NavbarIsland, so useUser() works here.
-// Admin = publicMetadata.role === "admin", set in Clerk dashboard.
-function useNavbarAuth(): { signedIn: boolean; isAdmin: boolean } {
-	const { isSignedIn, user } = useUser();
-	const role = (user?.publicMetadata as { role?: string } | null)?.role;
-	return {
-		signedIn: Boolean(isSignedIn),
-		isAdmin: role === "admin",
-	};
+interface NavbarProps {
+	isSignedIn: boolean;
+	isAdmin: boolean;
 }
 
 function HamburgerButton({
@@ -176,11 +168,11 @@ function MobileNav({
 	);
 }
 
-export function Navbar() {
+export function Navbar({ isSignedIn, isAdmin }: NavbarProps) {
 	const [isVisible, setIsVisible] = useState(true);
 	const [lastScrollY, setLastScrollY] = useState(0);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const { signedIn, isAdmin } = useNavbarAuth();
+	const signedIn = isSignedIn;
 
 	useEffect(() => {
 		const handleScroll = () => {
