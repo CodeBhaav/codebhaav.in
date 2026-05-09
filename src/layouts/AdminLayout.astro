@@ -34,9 +34,9 @@ const navItems = [
 		<title>{title} · CodeBhaav Admin</title>
 	</head>
 	<body class="bg-background text-text-primary antialiased">
-		<div class="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
+		<div class="flex min-h-screen">
 			<aside
-				class="hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:w-[240px] border-r border-border bg-surface"
+				class="hidden lg:flex lg:flex-col lg:w-[240px] lg:shrink-0 border-r border-border bg-surface sticky top-0 self-start max-h-screen"
 			>
 				<div class="flex h-16 items-center border-b border-border px-6">
 					<a
@@ -98,7 +98,7 @@ const navItems = [
 				</div>
 			</aside>
 
-			<div class="lg:pl-[240px] flex flex-col min-h-screen">
+			<div class="flex-1 min-w-0 flex flex-col">
 				<header
 					class="lg:hidden h-14 flex items-center justify-between border-b border-border px-4 bg-surface"
 				>

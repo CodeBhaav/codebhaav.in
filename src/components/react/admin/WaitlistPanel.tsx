@@ -44,9 +44,19 @@ export function WaitlistPanel() {
 				<MetricCard
 					label="Top referrer"
 					value={
-						stats.topReferrer ? `${stats.topReferrer.referralCount}` : "—"
+						stats.topReferrer && stats.topReferrer.referralCount > 0
+							? stats.topReferrer.name
+							: "—"
 					}
-					hint={stats.topReferrer?.name ?? "no referrals yet"}
+					hint={
+						stats.topReferrer && stats.topReferrer.referralCount > 0
+							? `${stats.topReferrer.referralCount} ${
+									stats.topReferrer.referralCount === 1
+										? "invite"
+										: "invites"
+								}`
+							: "no referrals yet"
+					}
 				/>
 			</div>
 
@@ -85,49 +95,54 @@ export function WaitlistPanel() {
 					title="Top referrers"
 					hint="By number of successful invites"
 				/>
-				<div className="mt-4 overflow-x-auto -mx-6">
-					<table className="min-w-full text-sm">
-						<thead>
-							<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
-								<th className="px-6 py-2 font-medium">Name</th>
-								<th className="px-6 py-2 font-medium">Code</th>
-								<th className="px-6 py-2 font-medium text-right">Referrals</th>
-							</tr>
-						</thead>
-						<tbody>
-							{stats.topReferrers.length === 0 ? (
-								<tr>
-									<td
-										colSpan={3}
-										className="px-6 py-6 text-center text-sm text-text-muted"
-									>
-										No referrals yet.
-									</td>
-								</tr>
-							) : (
-								stats.topReferrers.map((r, i) => (
-									<tr
-										key={r.referralCode}
-										className="border-t border-border text-text-secondary"
-									>
-										<td className="px-6 py-3 text-text-primary font-medium">
-											<span className="text-text-muted mr-2 font-mono text-xs">
-												#{i + 1}
-											</span>
-											{r.name}
-										</td>
-										<td className="px-6 py-3 font-mono text-[12px] text-accent">
-											{r.referralCode}
-										</td>
-										<td className="px-6 py-3 text-right font-mono text-[13px] text-text-primary">
-											{r.referralCount}
-										</td>
+				{(() => {
+					const realReferrers = stats.topReferrers.filter(
+						(r) => r.referralCount > 0,
+					);
+					if (realReferrers.length === 0) {
+						return (
+							<p className="mt-6 py-6 text-center text-sm text-text-muted">
+								Nobody has referred anyone yet.
+							</p>
+						);
+					}
+					return (
+						<div className="mt-4 overflow-x-auto -mx-6">
+							<table className="min-w-full text-sm">
+								<thead>
+									<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
+										<th className="px-6 py-2 font-medium">Name</th>
+										<th className="px-6 py-2 font-medium">Code</th>
+										<th className="px-6 py-2 font-medium text-right">
+											Referrals
+										</th>
 									</tr>
-								))
-							)}
-						</tbody>
-					</table>
-				</div>
+								</thead>
+								<tbody>
+									{realReferrers.map((r, i) => (
+										<tr
+											key={r.referralCode}
+											className="border-t border-border text-text-secondary"
+										>
+											<td className="px-6 py-3 text-text-primary font-medium">
+												<span className="text-text-muted mr-2 font-mono text-xs">
+													#{i + 1}
+												</span>
+												{r.name}
+											</td>
+											<td className="px-6 py-3 font-mono text-[12px] text-accent">
+												{r.referralCode}
+											</td>
+											<td className="px-6 py-3 text-right font-mono text-[13px] text-text-primary">
+												{r.referralCount}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					);
+				})()}
 			</Panel>
 
 			<Panel>
