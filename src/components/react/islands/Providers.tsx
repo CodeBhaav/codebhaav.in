@@ -1,6 +1,7 @@
 import { type ReactNode, useMemo } from "react";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 let cachedClient: ConvexReactClient | null = null;
@@ -17,21 +18,28 @@ function getConvexClient(): ConvexReactClient | null {
 	return cachedClient;
 }
 
-/** Full providers with Clerk + Convex. Use only ONCE per page. */
+/**
+ * Full providers with Clerk + Convex (auth-aware). Use once per page.
+ * ConvexProviderWithClerk forwards the Clerk JWT to Convex so server-side
+ * functions can call `ctx.auth.getUserIdentity()` and read role/metadata
+ * from verified claims.
+ */
 export function Providers({ children, name }: { children: ReactNode; name?: string }) {
 	const client = useMemo(() => getConvexClient(), []);
 	const clerkKey = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
-	const convexWrapped = client ? (
-		<ConvexProvider client={client}>{children}</ConvexProvider>
+	const inner = client ? (
+		<ConvexProviderWithClerk client={client} useAuth={useAuth}>
+			{children}
+		</ConvexProviderWithClerk>
 	) : (
 		<>{children}</>
 	);
 
 	const withClerk = clerkKey ? (
-		<ClerkProvider publishableKey={clerkKey}>{convexWrapped}</ClerkProvider>
+		<ClerkProvider publishableKey={clerkKey}>{inner}</ClerkProvider>
 	) : (
-		convexWrapped
+		<>{children}</>
 	);
 
 	return <ErrorBoundary name={name}>{withClerk}</ErrorBoundary>;

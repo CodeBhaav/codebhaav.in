@@ -20,7 +20,7 @@ export function Dashboard() {
 	);
 	const application = useQuery(
 		api.foundingMember.getMyApplication,
-		clerkUserId ? { clerkUserId } : "skip",
+		clerkUserId ? {} : "skip",
 	);
 
 	if (!isLoaded) {

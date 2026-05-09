@@ -5,15 +5,14 @@ import { api } from "../../../../convex/_generated/api";
 
 export function WaitlistPanel() {
 	const { user } = useUser();
-	const clerkUserId = user?.id;
 
 	const stats = useQuery(
 		api.admin.getWaitlistStats,
-		clerkUserId ? { clerkUserId } : "skip",
+		user ? {} : "skip",
 	);
 	const list = useQuery(
 		api.admin.listWaitlist,
-		clerkUserId ? { clerkUserId } : "skip",
+		user ? {} : "skip",
 	);
 
 	if (!user || !stats || !list) {

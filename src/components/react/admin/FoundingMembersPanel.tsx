@@ -10,15 +10,14 @@ type ApplicationStatus = "submitted" | "in_review" | "accepted" | "rejected";
 
 export function FoundingMembersPanel() {
 	const { user } = useUser();
-	const clerkUserId = user?.id;
 
 	const stats = useQuery(
 		api.admin.getFoundingStats,
-		clerkUserId ? { clerkUserId } : "skip",
+		user ? {} : "skip",
 	);
 	const list = useQuery(
 		api.admin.listFoundingMembers,
-		clerkUserId ? { clerkUserId } : "skip",
+		user ? {} : "skip",
 	);
 	const flipStatus = useMutation(api.admin.flipFoundingStatus);
 
@@ -34,12 +33,10 @@ export function FoundingMembersPanel() {
 		id: Id<"foundingMember">,
 		newStatus: ApplicationStatus,
 	) => {
-		if (!clerkUserId) return;
 		setFlipError(null);
 		setPendingFlip(id);
 		try {
 			await flipStatus({
-				clerkUserId,
 				applicationId: id,
 				status: newStatus,
 			});

@@ -365,11 +365,11 @@ export function FoundingMemberForm() {
 	const updateApplication = useMutation(api.foundingMember.updateMyApplication);
 	const existingApplication = useQuery(
 		api.foundingMember.getMyApplication,
-		clerkUserId ? { clerkUserId } : "skip",
+		clerkUserId ? {} : "skip",
 	);
 	const profile = useQuery(
 		api.userProfile.getMyProfile,
-		clerkUserId ? { clerkUserId } : "skip",
+		clerkUserId ? {} : "skip",
 	);
 
 	const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
@@ -487,7 +487,6 @@ export function FoundingMemberForm() {
 			try {
 				if (isEditingSubmitted) {
 					await updateApplication({
-						clerkUserId,
 						whatsapp: formData.whatsapp.trim(),
 						github: formData.github.trim() || undefined,
 						linkedin: formData.linkedin.trim() || undefined,
@@ -501,7 +500,6 @@ export function FoundingMemberForm() {
 					posthog.capture("founding_member_application_updated");
 				} else {
 					await submitApplication({
-						clerkUserId,
 						name: fullName,
 						email,
 						whatsapp: formData.whatsapp.trim(),

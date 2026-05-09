@@ -8,12 +8,15 @@ import { query } from "./_generated/server";
  * can prefill forms without an extra round-trip.
  */
 export const getMyProfile = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
+	args: {},
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+
 		const profile = await ctx.db
 			.query("userProfile")
 			.withIndex("by_clerkUserId", (q) =>
-				q.eq("clerkUserId", args.clerkUserId),
+				q.eq("clerkUserId", identity.subject),
 			)
 			.first();
 

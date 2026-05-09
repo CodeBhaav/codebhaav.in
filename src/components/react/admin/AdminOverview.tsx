@@ -18,10 +18,9 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function AdminOverview() {
 	const { user } = useUser();
-	const clerkUserId = user?.id;
 	const overview = useQuery(
 		api.admin.getOverview,
-		clerkUserId ? { clerkUserId } : "skip",
+		user ? {} : "skip",
 	);
 
 	if (!user || !overview) {

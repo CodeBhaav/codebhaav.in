@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
 	internalMutation,
 	mutation,
@@ -14,9 +15,18 @@ const statusValidator = v.union(
 	v.literal("rejected"),
 );
 
+async function requireUser(
+	ctx: QueryCtx | MutationCtx,
+): Promise<string> {
+	const identity = await ctx.auth.getUserIdentity();
+	if (!identity) {
+		throw new Error("Not authenticated");
+	}
+	return identity.subject;
+}
+
 export const submitApplication = mutation({
 	args: {
-		clerkUserId: v.string(),
 		name: v.string(),
 		email: v.string(),
 		whatsapp: v.string(),
@@ -30,11 +40,13 @@ export const submitApplication = mutation({
 		ideas: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const clerkUserId = await requireUser(ctx);
+
 		// Reject if this Clerk user already applied — one application per account.
 		const existingByUser = await ctx.db
 			.query("foundingMember")
 			.withIndex("by_clerkUserId", (q) =>
-				q.eq("clerkUserId", args.clerkUserId),
+				q.eq("clerkUserId", clerkUserId),
 			)
 			.first();
 
@@ -52,10 +64,7 @@ export const submitApplication = mutation({
 			throw new Error("Application already submitted with this email");
 		}
 
-		// Profile fields go to userProfile (one source of truth, reusable
-		// for future forms). Only application-specific fields land on the
-		// foundingMember row.
-		await upsertProfileInternal(ctx, args.clerkUserId, {
+		await upsertProfileInternal(ctx, clerkUserId, {
 			whatsapp: args.whatsapp,
 			github: args.github,
 			linkedin: args.linkedin,
@@ -65,7 +74,7 @@ export const submitApplication = mutation({
 		});
 
 		const id = await ctx.db.insert("foundingMember", {
-			clerkUserId: args.clerkUserId,
+			clerkUserId,
 			name: args.name,
 			email: args.email,
 			motivation: args.motivation,
@@ -84,12 +93,15 @@ export const submitApplication = mutation({
 });
 
 export const getMyApplication = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
+	args: {},
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+
 		const application = await ctx.db
 			.query("foundingMember")
 			.withIndex("by_clerkUserId", (q) =>
-				q.eq("clerkUserId", args.clerkUserId),
+				q.eq("clerkUserId", identity.subject),
 			)
 			.first();
 
@@ -108,18 +120,8 @@ export const getMyApplication = query({
 	},
 });
 
-/**
- * Edit a previously-submitted application. Only allowed while the
- * application is still in the `submitted` state — once a reviewer has
- * touched it (in_review / accepted / rejected), edits are locked so the
- * decision artifact is stable.
- *
- * Authorization is the same trust-the-clerkUserId pattern as
- * submitApplication; tighten when ConvexProviderWithClerk lands.
- */
 export const updateMyApplication = mutation({
 	args: {
-		clerkUserId: v.string(),
 		whatsapp: v.string(),
 		github: v.optional(v.string()),
 		linkedin: v.optional(v.string()),
@@ -131,10 +133,12 @@ export const updateMyApplication = mutation({
 		ideas: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const clerkUserId = await requireUser(ctx);
+
 		const application = await ctx.db
 			.query("foundingMember")
 			.withIndex("by_clerkUserId", (q) =>
-				q.eq("clerkUserId", args.clerkUserId),
+				q.eq("clerkUserId", clerkUserId),
 			)
 			.first();
 
@@ -149,7 +153,7 @@ export const updateMyApplication = mutation({
 			);
 		}
 
-		await upsertProfileInternal(ctx, args.clerkUserId, {
+		await upsertProfileInternal(ctx, clerkUserId, {
 			whatsapp: args.whatsapp,
 			github: args.github,
 			linkedin: args.linkedin,
@@ -169,11 +173,9 @@ export const updateMyApplication = mutation({
 });
 
 /**
- * Admin-only — invoke via `npx convex run foundingMember:updateStatus`.
- * Accepts an application id and a new status; sends a branded email for
- * `accepted` and `rejected` transitions. `in_review` updates silently
- * because it's a system-internal step the applicant doesn't need to be
- * notified about.
+ * Internal admin entry point — kept around for CLI invocations:
+ * `npx convex run foundingMember:updateStatus '{...}'`. The frontend
+ * uses admin:flipFoundingStatus instead, which is properly auth-gated.
  */
 export const updateStatus = internalMutation({
 	args: {

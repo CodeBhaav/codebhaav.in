@@ -1,24 +1,29 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 
-// TODO: replace with proper Clerk-Convex JWT auth (ConvexProviderWithClerk
-// + auth.config.ts) so we can do `ctx.auth.getUserIdentity()` instead of
-// trusting a client-passed clerkUserId. Until then, the soft gate here is
-// "your clerkUserId must match an entry in ADMIN_CLERK_IDS env var".
-function getAdminIds(): readonly string[] {
-	const raw = process.env.ADMIN_CLERK_IDS ?? "";
-	return raw
-		.split(",")
-		.map((s) => s.trim())
-		.filter(Boolean);
+// Convex's UserIdentity is the standard set of JWT claims; custom claims
+// like the role from publicMetadata aren't typed. We extend it here so
+// admin checks read role with full type safety.
+interface ClerkIdentity {
+	subject: string;
+	tokenIdentifier: string;
+	metadata?: { role?: string };
 }
 
-function assertAdmin(clerkUserId: string): void {
-	const admins = getAdminIds();
-	if (!admins.includes(clerkUserId)) {
+async function requireAdmin(
+	ctx: QueryCtx | MutationCtx,
+): Promise<ClerkIdentity> {
+	const identity = await ctx.auth.getUserIdentity();
+	if (!identity) {
+		throw new Error("Not authenticated");
+	}
+	const role = (identity as unknown as ClerkIdentity).metadata?.role;
+	if (role !== "admin") {
 		throw new Error("Not authorized");
 	}
+	return identity as unknown as ClerkIdentity;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -53,9 +58,9 @@ function buildDailyBuckets(
  * ──────────────────────────────────────────────────────────────────── */
 
 export const getOverview = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+	args: {},
+	handler: async (ctx) => {
+		await requireAdmin(ctx);
 
 		const waitlist = await ctx.db.query("waitlist").collect();
 		const founding = await ctx.db.query("foundingMember").collect();
@@ -125,9 +130,9 @@ export const getOverview = query({
  * ──────────────────────────────────────────────────────────────────── */
 
 export const getWaitlistStats = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+	args: {},
+	handler: async (ctx) => {
+		await requireAdmin(ctx);
 
 		const waitlist = await ctx.db.query("waitlist").collect();
 		const now = Date.now();
@@ -137,7 +142,6 @@ export const getWaitlistStats = query({
 		const thisWeekCount = waitlist.filter((w) => w._creationTime >= weekAgo).length;
 		const thisMonthCount = waitlist.filter((w) => w._creationTime >= monthAgo).length;
 
-		// Top referrer by referralCount.
 		const sortedByReferrals = [...waitlist].sort(
 			(a, b) => b.referralCount - a.referralCount,
 		);
@@ -154,7 +158,6 @@ export const getWaitlistStats = query({
 			referralCode: w.referralCode,
 		}));
 
-		// By interest (interests is an array on each row).
 		const interestCounts = new Map<string, number>();
 		for (const w of waitlist) {
 			for (const interest of w.interests) {
@@ -165,7 +168,6 @@ export const getWaitlistStats = query({
 			.map(([name, count]) => ({ name, count }))
 			.sort((a, b) => b.count - a.count);
 
-		// By role.
 		const roleCounts = new Map<string, number>();
 		for (const w of waitlist) {
 			roleCounts.set(w.role, (roleCounts.get(w.role) ?? 0) + 1);
@@ -187,9 +189,9 @@ export const getWaitlistStats = query({
 });
 
 export const listWaitlist = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+	args: {},
+	handler: async (ctx) => {
+		await requireAdmin(ctx);
 
 		const waitlist = await ctx.db
 			.query("waitlist")
@@ -218,9 +220,9 @@ export const listWaitlist = query({
  * ──────────────────────────────────────────────────────────────────── */
 
 export const getFoundingStats = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+	args: {},
+	handler: async (ctx) => {
+		await requireAdmin(ctx);
 
 		const founding = await ctx.db.query("foundingMember").collect();
 		const statusOrder = ["submitted", "in_review", "accepted", "rejected"] as const;
@@ -243,16 +245,15 @@ export const getFoundingStats = query({
 });
 
 export const listFoundingMembers = query({
-	args: { clerkUserId: v.string() },
-	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+	args: {},
+	handler: async (ctx) => {
+		await requireAdmin(ctx);
 
 		const founding = await ctx.db
 			.query("foundingMember")
 			.order("desc")
 			.collect();
 
-		// Hydrate with profile data for each row.
 		return Promise.all(
 			founding.map(async (f) => {
 				let profile: {
@@ -282,7 +283,6 @@ export const listFoundingMembers = query({
 						: null;
 				}
 
-				// Fall back to legacy fields on the row for pre-refactor applications.
 				const legacy = {
 					whatsapp: f.whatsapp ?? "",
 					github: f.github ?? "",
@@ -318,7 +318,6 @@ export const listFoundingMembers = query({
 
 export const flipFoundingStatus = mutation({
 	args: {
-		clerkUserId: v.string(),
 		applicationId: v.id("foundingMember"),
 		status: v.union(
 			v.literal("submitted"),
@@ -328,7 +327,7 @@ export const flipFoundingStatus = mutation({
 		),
 	},
 	handler: async (ctx, args) => {
-		assertAdmin(args.clerkUserId);
+		await requireAdmin(ctx);
 
 		const application = await ctx.db.get(args.applicationId);
 		if (!application) {
