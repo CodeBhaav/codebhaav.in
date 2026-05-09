@@ -2,7 +2,9 @@
 import "@/styles/global.css";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
-import { requireAdmin } from "@/lib/admin-guard";
+
+// Auth gate lives in src/middleware.ts so non-admin requests never reach
+// this layout. By the time we render here the user is verified admin.
 
 interface Props {
 	title: string;
@@ -10,11 +12,6 @@ interface Props {
 }
 
 const { title, active } = Astro.props;
-
-const guard = requireAdmin(Astro);
-if (guard) {
-	return guard;
-}
 
 const navItems = [
 	{ key: "overview", label: "Overview", href: "/admin", icon: "◐" },
