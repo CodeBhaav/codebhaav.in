@@ -1,5 +1,8 @@
 name = "codebhaav"
 compatibility_date = "2024-12-01"
+# Enables Node built-ins (fs, crypto, etc.) on Cloudflare Workers. Required
+# for @clerk/astro server middleware which uses Node's fs internally.
+compatibility_flags = ["nodejs_compat"]
 
 [ai]
 binding = "AI"
