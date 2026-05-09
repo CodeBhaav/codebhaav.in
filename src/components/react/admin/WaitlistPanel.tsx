@@ -1,27 +1,21 @@
 import { useUser } from "@clerk/clerk-react";
 import { useQuery } from "convex/react";
-import { BarList, Card, Title } from "@tremor/react";
 import { api } from "../../../../convex/_generated/api";
+import { MetricCard, Panel, PanelHeader } from "./AdminOverview";
 
 export function WaitlistPanel() {
 	const { user } = useUser();
 
-	const stats = useQuery(
-		api.admin.getWaitlistStats,
-		user ? {} : "skip",
-	);
-	const list = useQuery(
-		api.admin.listWaitlist,
-		user ? {} : "skip",
-	);
+	const stats = useQuery(api.admin.getWaitlistStats, user ? {} : "skip");
+	const list = useQuery(api.admin.listWaitlist, user ? {} : "skip");
 
 	if (!user || !stats || !list) {
 		return <LoadingState />;
 	}
 
 	return (
-		<div>
-			<header className="mb-8 flex flex-wrap items-start justify-between gap-3">
+		<div className="space-y-6">
+			<header className="flex flex-wrap items-start justify-between gap-3">
 				<div>
 					<p className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
 						Admin · Alpha
@@ -50,208 +44,212 @@ export function WaitlistPanel() {
 				<MetricCard
 					label="Top referrer"
 					value={
-						stats.topReferrer
-							? `${stats.topReferrer.referralCount}`
-							: "—"
+						stats.topReferrer ? `${stats.topReferrer.referralCount}` : "—"
 					}
 					hint={stats.topReferrer?.name ?? "no referrals yet"}
 				/>
 			</div>
 
-			<div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-				<Card className="bg-surface border-border">
-					<Title className="text-text-primary">Interests</Title>
-					<p className="mt-1 text-xs text-text-muted">
-						How many signups picked each interest tag.
-					</p>
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+				<Panel>
+					<PanelHeader
+						title="Interests"
+						hint="How many signups picked each interest tag"
+					/>
 					<BarList
 						className="mt-5"
-						color="amber"
-						data={
-							stats.byInterest.length > 0
-								? stats.byInterest.map((b) => ({
-										name: b.name,
-										value: b.count,
-									}))
-								: [{ name: "No data yet", value: 0 }]
-						}
+						data={stats.byInterest.map((b) => ({
+							name: b.name,
+							value: b.count,
+						}))}
 					/>
-				</Card>
+				</Panel>
 
-				<Card className="bg-surface border-border">
-					<Title className="text-text-primary">Roles</Title>
-					<p className="mt-1 text-xs text-text-muted">
-						Self-described role at signup.
-					</p>
+				<Panel>
+					<PanelHeader
+						title="Roles"
+						hint="Self-described role at signup"
+					/>
 					<BarList
 						className="mt-5"
-						color="amber"
-						data={
-							stats.byRole.length > 0
-								? stats.byRole.map((b) => ({
-										name: b.name,
-										value: b.count,
-									}))
-								: [{ name: "No data yet", value: 0 }]
-						}
+						data={stats.byRole.map((b) => ({
+							name: b.name,
+							value: b.count,
+						}))}
 					/>
-				</Card>
+				</Panel>
 			</div>
 
-			<div className="mt-6">
-				<Card className="bg-surface border-border">
-					<Title className="text-text-primary">Top referrers</Title>
-					<p className="mt-1 text-xs text-text-muted">
-						By number of successful invites.
-					</p>
-					<div className="mt-4 overflow-x-auto">
-						<table className="min-w-full text-sm">
-							<thead>
-								<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
-									<th className="py-2 pr-4 font-medium">Name</th>
-									<th className="py-2 pr-4 font-medium">Code</th>
-									<th className="py-2 font-medium text-right">Referrals</th>
+			<Panel>
+				<PanelHeader
+					title="Top referrers"
+					hint="By number of successful invites"
+				/>
+				<div className="mt-4 overflow-x-auto -mx-6">
+					<table className="min-w-full text-sm">
+						<thead>
+							<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
+								<th className="px-6 py-2 font-medium">Name</th>
+								<th className="px-6 py-2 font-medium">Code</th>
+								<th className="px-6 py-2 font-medium text-right">Referrals</th>
+							</tr>
+						</thead>
+						<tbody>
+							{stats.topReferrers.length === 0 ? (
+								<tr>
+									<td
+										colSpan={3}
+										className="px-6 py-6 text-center text-sm text-text-muted"
+									>
+										No referrals yet.
+									</td>
 								</tr>
-							</thead>
-							<tbody>
-								{stats.topReferrers.length === 0 ? (
-									<tr>
-										<td
-											colSpan={3}
-											className="py-6 text-center text-sm text-text-muted"
-										>
-											No referrals yet.
+							) : (
+								stats.topReferrers.map((r, i) => (
+									<tr
+										key={r.referralCode}
+										className="border-t border-border text-text-secondary"
+									>
+										<td className="px-6 py-3 text-text-primary font-medium">
+											<span className="text-text-muted mr-2 font-mono text-xs">
+												#{i + 1}
+											</span>
+											{r.name}
+										</td>
+										<td className="px-6 py-3 font-mono text-[12px] text-accent">
+											{r.referralCode}
+										</td>
+										<td className="px-6 py-3 text-right font-mono text-[13px] text-text-primary">
+											{r.referralCount}
 										</td>
 									</tr>
-								) : (
-									stats.topReferrers.map((r, i) => (
-										<tr
-											key={r.referralCode}
-											className="border-t border-border text-text-secondary"
-										>
-											<td className="py-3 pr-4 text-text-primary font-medium">
-												<span className="text-text-muted mr-2 font-mono text-xs">
-													#{i + 1}
-												</span>
-												{r.name}
-											</td>
-											<td className="py-3 pr-4 font-mono text-[12px] text-accent">
-												{r.referralCode}
-											</td>
-											<td className="py-3 text-right font-mono text-[13px] text-text-primary">
-												{r.referralCount}
-											</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					</div>
-				</Card>
-			</div>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+			</Panel>
 
-			<div className="mt-6">
-				<Card className="bg-surface border-border">
-					<div className="flex items-center justify-between">
-						<div>
-							<Title className="text-text-primary">All signups</Title>
-							<p className="mt-1 text-xs text-text-muted">
-								{list.length} {list.length === 1 ? "row" : "rows"} · sorted by most recent
-							</p>
-						</div>
-					</div>
-					<div className="mt-4 overflow-x-auto">
-						<table className="min-w-full text-sm">
-							<thead>
-								<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
-									<th className="py-2 pr-4 font-medium">Name</th>
-									<th className="py-2 pr-4 font-medium">Email</th>
-									<th className="py-2 pr-4 font-medium">Role</th>
-									<th className="py-2 pr-4 font-medium">Interests</th>
-									<th className="py-2 pr-4 font-medium">Referrals</th>
-									<th className="py-2 pr-4 font-medium">Code</th>
-									<th className="py-2 font-medium">Joined</th>
+			<Panel>
+				<PanelHeader
+					title="All signups"
+					hint={`${list.length} ${list.length === 1 ? "row" : "rows"} · sorted by most recent`}
+				/>
+				<div className="mt-4 overflow-x-auto -mx-6">
+					<table className="min-w-full text-sm">
+						<thead>
+							<tr className="text-left font-mono text-[11px] uppercase tracking-wider text-text-muted">
+								<th className="px-6 py-2 font-medium">Name</th>
+								<th className="px-6 py-2 font-medium">Email</th>
+								<th className="px-6 py-2 font-medium">Role</th>
+								<th className="px-6 py-2 font-medium">Interests</th>
+								<th className="px-6 py-2 font-medium">Referrals</th>
+								<th className="px-6 py-2 font-medium">Code</th>
+								<th className="px-6 py-2 font-medium">Joined</th>
+							</tr>
+						</thead>
+						<tbody>
+							{list.length === 0 ? (
+								<tr>
+									<td
+										colSpan={7}
+										className="px-6 py-6 text-center text-sm text-text-muted"
+									>
+										No signups yet.
+									</td>
 								</tr>
-							</thead>
-							<tbody>
-								{list.length === 0 ? (
-									<tr>
-										<td
-											colSpan={7}
-											className="py-6 text-center text-sm text-text-muted"
-										>
-											No signups yet.
+							) : (
+								list.map((row) => (
+									<tr
+										key={row.id}
+										className="border-t border-border text-text-secondary"
+									>
+										<td className="px-6 py-3 text-text-primary font-medium whitespace-nowrap">
+											{row.name}
+										</td>
+										<td className="px-6 py-3 truncate max-w-[220px]">
+											{row.email}
+										</td>
+										<td className="px-6 py-3 whitespace-nowrap">
+											{row.role}
+											{row.otherRole ? ` · ${row.otherRole}` : ""}
+										</td>
+										<td className="px-6 py-3 max-w-[200px]">
+											<span className="text-xs text-text-muted">
+												{row.interests.join(", ")}
+											</span>
+										</td>
+										<td className="px-6 py-3 font-mono text-[13px] text-text-primary">
+											{row.referralCount}
+										</td>
+										<td className="px-6 py-3 font-mono text-[12px] text-accent">
+											{row.referralCode}
+										</td>
+										<td className="px-6 py-3 font-mono text-[12px] text-text-muted whitespace-nowrap">
+											{new Date(row.signedUpAt).toLocaleDateString()}
 										</td>
 									</tr>
-								) : (
-									list.map((row) => (
-										<tr
-											key={row.id}
-											className="border-t border-border text-text-secondary"
-										>
-											<td className="py-3 pr-4 text-text-primary font-medium whitespace-nowrap">
-												{row.name}
-											</td>
-											<td className="py-3 pr-4 truncate max-w-[220px]">
-												{row.email}
-											</td>
-											<td className="py-3 pr-4 whitespace-nowrap">
-												{row.role}
-												{row.otherRole ? ` · ${row.otherRole}` : ""}
-											</td>
-											<td className="py-3 pr-4 max-w-[200px]">
-												<span className="text-xs text-text-muted">
-													{row.interests.join(", ")}
-												</span>
-											</td>
-											<td className="py-3 pr-4 font-mono text-[13px] text-text-primary">
-												{row.referralCount}
-											</td>
-											<td className="py-3 pr-4 font-mono text-[12px] text-accent">
-												{row.referralCode}
-											</td>
-											<td className="py-3 font-mono text-[12px] text-text-muted whitespace-nowrap">
-												{new Date(row.signedUpAt).toLocaleDateString()}
-											</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					</div>
-				</Card>
-			</div>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+			</Panel>
 		</div>
 	);
 }
 
-function MetricCard({
-	label,
-	value,
-	hint,
+function BarList({
+	data,
+	className,
 }: {
-	label: string;
-	value: string | number;
-	hint?: string;
+	data: Array<{ name: string; value: number }>;
+	className?: string;
 }) {
+	if (data.length === 0) {
+		return (
+			<p className="mt-2 text-sm text-text-muted">No data yet.</p>
+		);
+	}
+	const max = Math.max(...data.map((d) => d.value));
 	return (
-		<Card className="bg-surface border-border">
-			<p className="font-mono text-[10px] sm:text-[11px] uppercase tracking-widest text-text-muted">
-				{label}
-			</p>
-			<p className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">
-				{value}
-			</p>
-			{hint && (
-				<p className="mt-1 text-[11px] text-text-muted truncate">{hint}</p>
-			)}
-		</Card>
+		<div className={className}>
+			<ul className="space-y-2.5">
+				{data.map((d) => {
+					const pct = max === 0 ? 0 : (d.value / max) * 100;
+					return (
+						<li key={d.name}>
+							<div className="flex items-baseline justify-between gap-3 text-sm">
+								<span className="truncate text-text-primary">{d.name}</span>
+								<span className="font-mono text-[12px] text-text-secondary">
+									{d.value}
+								</span>
+							</div>
+							<div className="mt-1.5 h-1.5 w-full rounded-full bg-surface overflow-hidden">
+								<div
+									className="h-full rounded-full bg-accent"
+									style={{ width: `${pct}%` }}
+								/>
+							</div>
+						</li>
+					);
+				})}
+			</ul>
+		</div>
 	);
 }
 
 function toCsv(rows: Array<Record<string, unknown>>): string {
 	if (rows.length === 0) return "";
-	const headers = ["name", "email", "role", "interests", "referralCount", "referralCode", "signedUpAt"];
+	const headers = [
+		"name",
+		"email",
+		"role",
+		"interests",
+		"referralCount",
+		"referralCode",
+		"signedUpAt",
+	];
 	const escape = (v: unknown): string => {
 		const s = v == null ? "" : Array.isArray(v) ? v.join("|") : String(v);
 		return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -272,14 +270,14 @@ function toCsv(rows: Array<Record<string, unknown>>): string {
 
 function LoadingState() {
 	return (
-		<div>
+		<div className="space-y-6">
 			<div className="h-9 w-48 animate-pulse rounded-[4px] bg-surface" />
-			<div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+			<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 				{[1, 2, 3, 4].map((i) => (
 					<div key={i} className="h-24 animate-pulse rounded-card bg-surface" />
 				))}
 			</div>
-			<div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 				<div className="h-72 animate-pulse rounded-card bg-surface" />
 				<div className="h-72 animate-pulse rounded-card bg-surface" />
 			</div>

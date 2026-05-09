@@ -3,12 +3,6 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 
-/* Tell Tailwind v4 to scan Tremor's compiled files so its class names
-   show up in the generated CSS. Tremor 3 ships pre-built JSX with
-   Tailwind utility classes in node_modules, which v4's auto-scanner
-   ignores by default. */
-@source "../../node_modules/@tremor/react/dist/**/*.{js,cjs,mjs}";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
