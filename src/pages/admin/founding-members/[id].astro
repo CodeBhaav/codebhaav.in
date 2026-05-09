@@ -1,0 +1,16 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import FoundingMemberDetailIsland from "@/components/react/islands/FoundingMemberDetailIsland";
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+if (!id) {
+	return Astro.redirect("/admin/founding-members");
+}
+---
+
+<AdminLayout title="Application" active="founding-members">
+	<FoundingMemberDetailIsland client:only="react" applicationId={id} />
+</AdminLayout>

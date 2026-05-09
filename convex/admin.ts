@@ -138,9 +138,17 @@ export const getWaitlistStats = query({
 		const now = Date.now();
 		const weekAgo = now - 7 * DAY_MS;
 		const monthAgo = now - 30 * DAY_MS;
+		const twoWeeksAgo = now - 14 * DAY_MS;
+		const twoMonthsAgo = now - 60 * DAY_MS;
 
 		const thisWeekCount = waitlist.filter((w) => w._creationTime >= weekAgo).length;
 		const thisMonthCount = waitlist.filter((w) => w._creationTime >= monthAgo).length;
+		const prevWeekCount = waitlist.filter(
+			(w) => w._creationTime >= twoWeeksAgo && w._creationTime < weekAgo,
+		).length;
+		const prevMonthCount = waitlist.filter(
+			(w) => w._creationTime >= twoMonthsAgo && w._creationTime < monthAgo,
+		).length;
 
 		const sortedByReferrals = [...waitlist].sort(
 			(a, b) => b.referralCount - a.referralCount,
@@ -176,14 +184,22 @@ export const getWaitlistStats = query({
 			.map(([name, count]) => ({ name, count }))
 			.sort((a, b) => b.count - a.count);
 
+		const signupsByDay = buildDailyBuckets(
+			waitlist.map((w) => w._creationTime),
+			30,
+		);
+
 		return {
 			total: waitlist.length,
 			thisWeekCount,
 			thisMonthCount,
+			prevWeekCount,
+			prevMonthCount,
 			topReferrer,
 			topReferrers,
 			byInterest,
 			byRole,
+			signupsByDay,
 		};
 	},
 });
@@ -235,12 +251,37 @@ export const getFoundingStats = query({
 		const total = founding.length;
 		const submittedCount =
 			byStatus.find((s) => s.name === "submitted")?.count ?? 0;
+		const inReviewCount =
+			byStatus.find((s) => s.name === "in_review")?.count ?? 0;
 		const acceptedCount =
 			byStatus.find((s) => s.name === "accepted")?.count ?? 0;
 		const rejectedCount =
 			byStatus.find((s) => s.name === "rejected")?.count ?? 0;
 
-		return { total, byStatus, submittedCount, acceptedCount, rejectedCount };
+		const now = Date.now();
+		const weekAgo = now - 7 * DAY_MS;
+		const twoWeeksAgo = now - 14 * DAY_MS;
+		const thisWeekCount = founding.filter((f) => f._creationTime >= weekAgo).length;
+		const prevWeekCount = founding.filter(
+			(f) => f._creationTime >= twoWeeksAgo && f._creationTime < weekAgo,
+		).length;
+
+		const applicationsByDay = buildDailyBuckets(
+			founding.map((f) => f._creationTime),
+			30,
+		);
+
+		return {
+			total,
+			byStatus,
+			submittedCount,
+			inReviewCount,
+			acceptedCount,
+			rejectedCount,
+			thisWeekCount,
+			prevWeekCount,
+			applicationsByDay,
+		};
 	},
 });
 
@@ -312,6 +353,68 @@ export const listFoundingMembers = query({
 	},
 });
 
+export const getFoundingMember = query({
+	args: { applicationId: v.id("foundingMember") },
+	handler: async (ctx, args) => {
+		await requireAdmin(ctx);
+
+		const f = await ctx.db.get(args.applicationId);
+		if (!f) return null;
+
+		let profile: {
+			whatsapp: string;
+			github: string;
+			linkedin: string;
+			portfolio: string;
+			skills: string;
+			experience: string;
+		} | null = null;
+		if (f.clerkUserId) {
+			const row = await ctx.db
+				.query("userProfile")
+				.withIndex("by_clerkUserId", (q) =>
+					q.eq("clerkUserId", f.clerkUserId as string),
+				)
+				.first();
+			profile = row
+				? {
+						whatsapp: row.whatsapp ?? "",
+						github: row.github ?? "",
+						linkedin: row.linkedin ?? "",
+						portfolio: row.portfolio ?? "",
+						skills: row.skills ?? "",
+						experience: row.experience ?? "",
+					}
+				: null;
+		}
+
+		const legacy = {
+			whatsapp: f.whatsapp ?? "",
+			github: f.github ?? "",
+			linkedin: f.linkedin ?? "",
+			portfolio: f.portfolio ?? "",
+			skills: f.skills ?? "",
+			experience: f.experience ?? "",
+		};
+
+		return {
+			id: f._id,
+			name: f.name,
+			email: f.email,
+			submittedAt: f._creationTime,
+			status: (f.status ?? "submitted") as
+				| "submitted"
+				| "in_review"
+				| "accepted"
+				| "rejected",
+			motivation: f.motivation,
+			commitment: f.commitment,
+			ideas: f.ideas ?? "",
+			profile: profile ?? legacy,
+		};
+	},
+});
+
 /* ────────────────────────────────────────────────────────────────────
  *  Mutations — admin actions
  * ──────────────────────────────────────────────────────────────────── */
@@ -349,6 +452,34 @@ export const flipFoundingStatus = mutation({
 				{ name: application.name, email: application.email },
 			);
 		}
+
+		// Sync segments + properties + (for accepted) opt them into founders_only.
+		// Note: there is no "rejected" segment  rejected applicants are still
+		// in the `waitlist` segment, with `application_status="rejected"` as a
+		// property for filtering / personalization.
+		const addSegments: Array<
+			"waitlist" | "founding_applicants" | "accepted_founders"
+		> = [];
+		const removeSegments: Array<typeof addSegments[number]> = [];
+		const topics: { founders_only?: boolean } = {};
+
+		if (args.status === "accepted") {
+			addSegments.push("accepted_founders");
+			topics.founders_only = true;
+		} else {
+			// rejected / submitted / in_review  not in accepted_founders
+			removeSegments.push("accepted_founders");
+			if (args.status === "rejected") topics.founders_only = false;
+		}
+
+		await ctx.scheduler.runAfter(0, internal.email.syncContact, {
+			email: application.email,
+			name: application.name,
+			properties: { application_status: args.status },
+			addSegments,
+			removeSegments,
+			...(Object.keys(topics).length > 0 ? { topics } : {}),
+		});
 
 		return { id: args.applicationId, status: args.status };
 	},

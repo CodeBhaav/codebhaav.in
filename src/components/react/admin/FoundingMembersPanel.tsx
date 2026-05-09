@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
+import { ChevronRight } from "lucide-react";
 import {
 	Cell,
 	Pie,
@@ -9,13 +10,19 @@ import {
 	Tooltip,
 } from "recharts";
 import { api } from "../../../../convex/_generated/api";
-import type { Id } from "../../../../convex/_generated/dataModel";
+import { cn } from "@/lib/utils";
 import {
+	Avatar,
+	ChartTooltip,
+	EmptyState,
 	LegendRow,
 	MetricCard,
+	PageHeader,
 	Panel,
 	PanelHeader,
 	StatusPill,
+	computePctDelta,
+	formatRelative,
 } from "./AdminOverview";
 
 type ApplicationStatus = "submitted" | "in_review" | "accepted" | "rejected";
@@ -34,37 +41,41 @@ const STATUS_COLORS: Record<ApplicationStatus, string> = {
 	rejected: "#f43f5e",
 };
 
+const STATUS_FILTERS: Array<{ key: ApplicationStatus | "all"; label: string }> = [
+	{ key: "all", label: "All" },
+	{ key: "submitted", label: "Submitted" },
+	{ key: "in_review", label: "In review" },
+	{ key: "accepted", label: "Accepted" },
+	{ key: "rejected", label: "Rejected" },
+];
+
 export function FoundingMembersPanel() {
 	const { user } = useUser();
 
 	const stats = useQuery(api.admin.getFoundingStats, user ? {} : "skip");
 	const list = useQuery(api.admin.listFoundingMembers, user ? {} : "skip");
-	const flipStatus = useMutation(api.admin.flipFoundingStatus);
 
-	const [expandedId, setExpandedId] = useState<string | null>(null);
-	const [pendingFlip, setPendingFlip] = useState<string | null>(null);
-	const [flipError, setFlipError] = useState<string | null>(null);
+	const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">(
+		"all",
+	);
+	const [search, setSearch] = useState("");
+
+	const filtered = useMemo(() => {
+		if (!list) return [];
+		const q = search.trim().toLowerCase();
+		return list.filter((app) => {
+			if (statusFilter !== "all" && app.status !== statusFilter) return false;
+			if (!q) return true;
+			return (
+				app.name.toLowerCase().includes(q) ||
+				app.email.toLowerCase().includes(q)
+			);
+		});
+	}, [list, statusFilter, search]);
 
 	if (!user || !stats || !list) {
 		return <LoadingState />;
 	}
-
-	const handleFlip = async (
-		id: Id<"foundingMember">,
-		newStatus: ApplicationStatus,
-	) => {
-		setFlipError(null);
-		setPendingFlip(id);
-		try {
-			await flipStatus({ applicationId: id, status: newStatus });
-		} catch (err) {
-			setFlipError(
-				err instanceof Error ? err.message : "Failed to update status",
-			);
-		} finally {
-			setPendingFlip(null);
-		}
-	};
 
 	const statusData = stats.byStatus
 		.filter((s) => s.count > 0)
@@ -74,73 +85,88 @@ export function FoundingMembersPanel() {
 			fill: STATUS_COLORS[s.name as ApplicationStatus] ?? "#52525b",
 		}));
 
-	return (
-		<div className="space-y-6">
-			<header>
-				<p className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
-					Admin
-				</p>
-				<h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">
-					Founding Members
-				</h1>
-				<p className="mt-1.5 text-sm text-text-secondary">
-					Review applications and flip status inline. Status changes fire the
-					corresponding email automatically.
-				</p>
-			</header>
+	const trendValues = stats.applicationsByDay.map((d) => d.count);
+	const weekDelta = computePctDelta(stats.thisWeekCount, stats.prevWeekCount);
 
-			<div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-				<MetricCard label="Total" value={stats.total} />
+	const acceptanceRate =
+		stats.total > 0
+			? Math.round((stats.acceptedCount / stats.total) * 1000) / 10
+			: 0;
+
+	return (
+		<div className="space-y-8">
+			<PageHeader
+				eyebrow="Admin"
+				title="Founding Members"
+				subtitle="Review applications and flip status inline. Status changes fire the corresponding email automatically."
+			/>
+
+			<div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+				<MetricCard
+					label="Total"
+					value={stats.total}
+					sparkline={trendValues}
+					delta={weekDelta}
+				/>
 				<MetricCard
 					label="Pending review"
 					value={stats.submittedCount}
 					tone={stats.submittedCount > 0 ? "amber" : "neutral"}
+					hint={
+						stats.submittedCount > 0
+							? "needs attention"
+							: "all caught up"
+					}
 				/>
-				<MetricCard label="Accepted" value={stats.acceptedCount} />
+				<MetricCard
+					label="Accepted"
+					value={stats.acceptedCount}
+					tone="success"
+					hint={`${acceptanceRate}% acceptance`}
+				/>
 				<MetricCard label="Rejected" value={stats.rejectedCount} />
 			</div>
 
 			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 				<Panel className="lg:col-span-1">
-					<PanelHeader title="Status breakdown" hint="All-time" />
+					<PanelHeader title="Status breakdown" subtitle="All-time" />
 					{statusData.length === 0 ? (
-						<p className="mt-8 py-12 text-center text-sm text-text-muted">
-							No applications yet.
-						</p>
+						<EmptyState message="No applications yet." className="mt-6" />
 					) : (
 						<>
-							<div className="mt-4 h-44">
-								<ResponsiveContainer width="100%" height="100%">
-									<PieChart>
-										<Pie
-											data={statusData}
-											dataKey="value"
-											nameKey="name"
-											innerRadius={45}
-											outerRadius={75}
-											paddingAngle={2}
-											strokeWidth={0}
-										>
-											{statusData.map((entry) => (
-												<Cell key={entry.name} fill={entry.fill} />
-											))}
-										</Pie>
-										<Tooltip
-											contentStyle={{
-												backgroundColor: "#0a0a0a",
-												border: "1px solid #1F1F23",
-												borderRadius: 6,
-												fontSize: 12,
-											}}
-											labelStyle={{ color: "#a1a1aa" }}
-											itemStyle={{ color: "#fafafa" }}
-										/>
-									</PieChart>
-								</ResponsiveContainer>
+							<div className="mt-4 flex items-center justify-center">
+								<div className="relative h-[180px] w-[180px]">
+									<ResponsiveContainer width="100%" height="100%">
+										<PieChart>
+											<Pie
+												data={statusData}
+												dataKey="value"
+												nameKey="name"
+												innerRadius={56}
+												outerRadius={84}
+												paddingAngle={statusData.length > 1 ? 2 : 0}
+												strokeWidth={0}
+											>
+												{statusData.map((entry) => (
+													<Cell key={entry.name} fill={entry.fill} />
+												))}
+											</Pie>
+											<Tooltip content={<ChartTooltip />} />
+										</PieChart>
+									</ResponsiveContainer>
+									<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+										<span className="text-2xl font-bold tabular-nums text-text-primary">
+											{stats.total}
+										</span>
+										<span className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+											total
+										</span>
+									</div>
+								</div>
 							</div>
 							<LegendRow
 								items={statusData.map((s) => ({
-									label: `${s.name} (${s.value})`,
+									label: `${s.name} · ${s.value}`,
 									color: s.fill,
 								}))}
 							/>
@@ -149,194 +175,142 @@ export function FoundingMembersPanel() {
 				</Panel>
 
 				<Panel className="lg:col-span-2">
-					<PanelHeader title="How it works" />
-					<div className="mt-4 space-y-3 text-sm text-text-secondary">
-						<p>
-							Click a row below to expand the full submission. Use the status
-							buttons in the expanded panel to move an application through the
-							pipeline:
-						</p>
-						<ul className="space-y-2 text-xs text-text-muted">
-							<li className="flex items-start gap-3">
-								<span className="shrink-0">
-									<StatusPill status="submitted" />
-								</span>
-								<span>
-									Initial state. Applicant can still edit until you flip
-									this.
-								</span>
-							</li>
-							<li className="flex items-start gap-3">
-								<span className="shrink-0">
-									<StatusPill status="in_review" />
-								</span>
-								<span>
-									You're actively reviewing. No email sent. Edits locked
-									for the applicant.
-								</span>
-							</li>
-							<li className="flex items-start gap-3">
-								<span className="shrink-0">
-									<StatusPill status="accepted" />
-								</span>
-								<span>Sends the accepted email with dashboard CTA.</span>
-							</li>
-							<li className="flex items-start gap-3">
-								<span className="shrink-0">
-									<StatusPill status="rejected" />
-								</span>
-								<span>
-									Sends the rejection email reaffirming waitlist place.
-								</span>
-							</li>
-						</ul>
-					</div>
+					<PanelHeader title="Pipeline guide" subtitle="What each status means" />
+					<ul className="mt-5 space-y-3 text-xs text-text-secondary">
+						<li className="flex items-start gap-3">
+							<span className="shrink-0">
+								<StatusPill status="submitted" />
+							</span>
+							<span className="leading-relaxed text-text-muted">
+								Initial state. Applicant can still edit their submission until
+								you flip this.
+							</span>
+						</li>
+						<li className="flex items-start gap-3">
+							<span className="shrink-0">
+								<StatusPill status="in_review" />
+							</span>
+							<span className="leading-relaxed text-text-muted">
+								You're actively reviewing. No email sent. Edits locked for the
+								applicant.
+							</span>
+						</li>
+						<li className="flex items-start gap-3">
+							<span className="shrink-0">
+								<StatusPill status="accepted" />
+							</span>
+							<span className="leading-relaxed text-text-muted">
+								Sends the acceptance email with dashboard CTA.
+							</span>
+						</li>
+						<li className="flex items-start gap-3">
+							<span className="shrink-0">
+								<StatusPill status="rejected" />
+							</span>
+							<span className="leading-relaxed text-text-muted">
+								Sends the rejection email reaffirming waitlist place.
+							</span>
+						</li>
+					</ul>
 				</Panel>
 			</div>
 
-			{flipError && (
-				<div className="rounded-[6px] border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-400">
-					{flipError}
+			<Panel padded={false}>
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-5">
+					<PanelHeader
+						title="All applications"
+						subtitle={`${filtered.length} of ${list.length} ${list.length === 1 ? "row" : "rows"} · click to open`}
+						inline
+					/>
+					<div className="flex flex-wrap items-center gap-2">
+						<input
+							type="search"
+							placeholder="Search name or email…"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							className="h-9 w-56 rounded-button border border-border bg-surface px-3 text-xs text-text-primary placeholder:text-text-muted transition-colors hover:border-border-hover focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+						/>
+					</div>
 				</div>
-			)}
 
-			<Panel>
-				<PanelHeader
-					title={`All applications (${list.length})`}
-					hint="Click a row to view the full submission."
-				/>
-				<div className="mt-4 space-y-2">
-					{list.length === 0 ? (
-						<p className="py-8 text-center text-sm text-text-muted">
-							No applications yet.
-						</p>
-					) : (
-						list.map((app) => {
-							const isExpanded = expandedId === app.id;
-							const isPending = pendingFlip === app.id;
-							return (
-								<div
-									key={app.id}
-									className="rounded-[6px] border border-border bg-background overflow-hidden"
-								>
-									<button
-										type="button"
-										onClick={() =>
-											setExpandedId(isExpanded ? null : app.id)
-										}
-										className="w-full flex flex-wrap items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface"
-									>
-										<div className="flex-1 min-w-0">
-											<p className="text-sm font-medium text-text-primary truncate">
-												{app.name}
-											</p>
-											<p className="text-xs text-text-muted truncate">
-												{app.email}
-											</p>
-										</div>
-										<p className="font-mono text-[11px] text-text-muted whitespace-nowrap">
-											{new Date(app.submittedAt).toLocaleDateString()}
-										</p>
-										<StatusPill status={app.status} />
-										<span className="font-mono text-xs text-text-muted">
-											{isExpanded ? "−" : "+"}
-										</span>
-									</button>
-									{isExpanded && (
-										<div className="border-t border-border px-4 py-4">
-											<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-												<div>
-													<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-														Contact
-													</p>
-													<dl className="mt-2 space-y-1 text-xs text-text-secondary">
-														<DLRow
-															label="WhatsApp"
-															value={app.profile.whatsapp}
-														/>
-														<DLRow
-															label="GitHub"
-															value={app.profile.github}
-														/>
-														<DLRow
-															label="LinkedIn"
-															value={app.profile.linkedin}
-														/>
-														<DLRow
-															label="Portfolio"
-															value={app.profile.portfolio}
-														/>
-													</dl>
-												</div>
-												<div>
-													<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-														Skills & Experience
-													</p>
-													<p className="mt-2 whitespace-pre-wrap text-xs text-text-secondary">
-														{app.profile.skills || "—"}
-													</p>
-													<p className="mt-3 whitespace-pre-wrap text-xs text-text-secondary">
-														{app.profile.experience || "—"}
-													</p>
-												</div>
-												<div className="md:col-span-2">
-													<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-														Motivation
-													</p>
-													<p className="mt-2 whitespace-pre-wrap text-xs text-text-secondary">
-														{app.motivation}
-													</p>
-												</div>
-												<div>
-													<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-														Commitment
-													</p>
-													<p className="mt-2 whitespace-pre-wrap text-xs text-text-secondary">
-														{app.commitment}
-													</p>
-												</div>
-												<div>
-													<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-														Ideas
-													</p>
-													<p className="mt-2 whitespace-pre-wrap text-xs text-text-secondary">
-														{app.ideas || "—"}
-													</p>
-												</div>
-											</div>
-											<div className="mt-6 flex flex-wrap items-center gap-3">
-												<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-													Set status
-												</p>
-												{(
-													[
-														"submitted",
-														"in_review",
-														"accepted",
-														"rejected",
-													] as const
-												).map((s) => (
-													<button
-														key={s}
-														type="button"
-														disabled={isPending || app.status === s}
-														onClick={() => handleFlip(app.id, s)}
-														className="inline-flex items-center rounded-[4px] border border-border bg-background px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-text-secondary transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text-secondary"
-													>
-														{STATUS_LABELS[s]}
-													</button>
-												))}
-												{isPending && (
-													<span className="text-xs text-text-muted">
-														saving…
-													</span>
-												)}
-											</div>
-										</div>
+				<div className="flex flex-wrap items-center gap-1 border-b border-border px-4 py-3 sm:px-6">
+					{STATUS_FILTERS.map((f) => {
+						const count =
+							f.key === "all"
+								? stats.total
+								: f.key === "submitted"
+									? stats.submittedCount
+									: f.key === "in_review"
+										? stats.inReviewCount
+										: f.key === "accepted"
+											? stats.acceptedCount
+											: stats.rejectedCount;
+						const active = statusFilter === f.key;
+						return (
+							<button
+								key={f.key}
+								type="button"
+								onClick={() => setStatusFilter(f.key)}
+								className={cn(
+									"inline-flex items-center gap-1.5 rounded-button px-3 py-1.5 text-xs font-medium transition-colors",
+									active
+										? "bg-accent/10 text-accent"
+										: "text-text-secondary hover:bg-surface hover:text-text-primary",
+								)}
+							>
+								{f.label}
+								<span
+									className={cn(
+										"rounded-[3px] px-1 font-mono text-[10px] tabular-nums",
+										active
+											? "bg-accent/20 text-accent"
+											: "bg-surface text-text-muted",
 									)}
+								>
+									{count}
+								</span>
+							</button>
+						);
+					})}
+				</div>
+
+				<div className="divide-y divide-border">
+					{filtered.length === 0 ? (
+						<div className="px-6 py-12">
+							<EmptyState
+								message={
+									list.length === 0
+										? "No applications yet."
+										: "No matches for the current filter."
+								}
+							/>
+						</div>
+					) : (
+						filtered.map((app) => (
+							<a
+								key={app.id}
+								href={`/admin/founding-members/${app.id}`}
+								className="group flex flex-wrap items-center gap-4 px-6 py-4 transition-colors hover:bg-surface/40 focus-visible:bg-surface/40 focus-visible:outline-none"
+							>
+								<Avatar name={app.name} size={36} />
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-medium text-text-primary truncate">
+										{app.name}
+									</p>
+									<p className="text-xs text-text-muted truncate">
+										{app.email}
+									</p>
 								</div>
-							);
-						})
+								<p className="hidden sm:block font-mono text-[11px] text-text-muted whitespace-nowrap">
+									{formatRelative(app.submittedAt)}
+								</p>
+								<StatusPill status={app.status} />
+								<ChevronRight
+									className="size-4 text-text-muted transition-all group-hover:translate-x-0.5 group-hover:text-text-primary"
+									aria-hidden
+								/>
+							</a>
+						))
 					)}
 				</div>
 			</Panel>
@@ -344,23 +318,22 @@ export function FoundingMembersPanel() {
 	);
 }
 
-function DLRow({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex flex-wrap gap-2">
-			<dt className="text-text-muted">{label}</dt>
-			<dd className="text-text-secondary truncate">{value ? value : "—"}</dd>
-		</div>
-	);
-}
-
 function LoadingState() {
 	return (
-		<div className="space-y-6">
-			<div className="h-9 w-56 animate-pulse rounded-[4px] bg-surface" />
-			<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+		<div className="space-y-8">
+			<div>
+				<div className="h-3 w-16 animate-pulse rounded-[4px] bg-surface" />
+				<div className="mt-3 h-9 w-56 animate-pulse rounded-[4px] bg-surface" />
+				<div className="mt-2 h-3 w-72 animate-pulse rounded-[4px] bg-surface/60" />
+			</div>
+			<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 				{[1, 2, 3, 4].map((i) => (
-					<div key={i} className="h-24 animate-pulse rounded-card bg-surface" />
+					<div key={i} className="h-[120px] animate-pulse rounded-card bg-surface" />
 				))}
+			</div>
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+				<div className="h-72 animate-pulse rounded-card bg-surface" />
+				<div className="lg:col-span-2 h-72 animate-pulse rounded-card bg-surface" />
 			</div>
 			<div className="h-64 animate-pulse rounded-card bg-surface" />
 		</div>

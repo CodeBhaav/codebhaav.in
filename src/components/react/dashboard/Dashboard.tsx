@@ -110,6 +110,7 @@ export function Dashboard() {
 						label="View Application"
 					/>
 				)}
+				<QuickLink href="/dashboard/settings" label="Notification Settings" />
 			</div>
 		</div>
 	);

@@ -43,6 +43,7 @@ export const submitWaitlist = mutation({
 		otherInterest: v.optional(v.string()),
 		referredBy: v.optional(v.string()),
 		imageUrl: v.optional(v.string()),
+		newsletter: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const existing = await ctx.db
@@ -85,6 +86,7 @@ export const submitWaitlist = mutation({
 			referredBy: args.referredBy,
 			referralCount: 0,
 			imageUrl: args.imageUrl,
+			newsletter: args.newsletter ?? false,
 		});
 
 		const allEntries = await ctx.db.query("waitlist").collect();
@@ -95,6 +97,27 @@ export const submitWaitlist = mutation({
 			email: args.email,
 			position,
 			referralCode,
+		});
+
+		// Sync to Resend regardless of newsletter pref so we have CRM data
+		// for everyone who signs up. Topic subscriptions reflect their
+		// checkbox: ON  community_updates + product_announcements opt-in.
+		// OFF  both opt-out (event_invitations stays default opt-out).
+		const subscribed = args.newsletter === true;
+		await ctx.scheduler.runAfter(0, internal.email.syncContact, {
+			email: args.email,
+			name: args.name,
+			properties: {
+				role: args.role,
+				position,
+				referral_count: 0,
+				signed_up_at: new Date().toISOString(),
+			},
+			addSegments: ["waitlist"],
+			topics: {
+				community_updates: subscribed,
+				product_announcements: subscribed,
+			},
 		});
 
 		return { id, referralCode, position };

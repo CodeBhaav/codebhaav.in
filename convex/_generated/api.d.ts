@@ -19,6 +19,8 @@ import type * as emails_TestEmail from "../emails/TestEmail.js";
 import type * as emails_WaitlistEmail from "../emails/WaitlistEmail.js";
 import type * as foundingMember from "../foundingMember.js";
 import type * as http from "../http.js";
+import type * as resendConfig from "../resendConfig.js";
+import type * as resendResources from "../resendResources.js";
 import type * as userProfile from "../userProfile.js";
 import type * as waitlist from "../waitlist.js";
 
@@ -40,6 +42,8 @@ declare const fullApi: ApiFromModules<{
   "emails/WaitlistEmail": typeof emails_WaitlistEmail;
   foundingMember: typeof foundingMember;
   http: typeof http;
+  resendConfig: typeof resendConfig;
+  resendResources: typeof resendResources;
   userProfile: typeof userProfile;
   waitlist: typeof waitlist;
 }>;

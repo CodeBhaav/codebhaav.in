@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/react/ui/checkbox";
 
 interface WaitlistWizardProps {
   referralCode?: string;
@@ -43,6 +44,7 @@ interface FormData {
   role: string;
   interests: string[];
   reason: string;
+  newsletter: boolean;
 }
 
 const TOTAL_STEPS = 3;
@@ -516,9 +518,13 @@ function InterestsStep({
 function ReasonStep({
   value,
   onChange,
+  newsletter,
+  onNewsletterChange,
 }: {
   value: string;
   onChange: (v: string) => void;
+  newsletter: boolean;
+  onNewsletterChange: (v: boolean) => void;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const trimmed = value.trim();
@@ -529,7 +535,7 @@ function ReasonStep({
     <div className="space-y-10">
       <PromptHeading text="Last one  why CodeBhaav?" />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div
           className={cn(
             "relative rounded-card border bg-card transition-colors",
@@ -557,6 +563,33 @@ function ReasonStep({
             </span>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onNewsletterChange(!newsletter)}
+          className={cn(
+            "group flex w-full items-start gap-3 rounded-card border bg-card px-4 py-3 text-left transition-colors",
+            newsletter
+              ? "border-accent/40 hover:border-accent/60"
+              : "border-border hover:border-border-hover",
+          )}
+        >
+          <Checkbox
+            checked={newsletter}
+            onCheckedChange={onNewsletterChange}
+            tabIndex={-1}
+            className="mt-0.5"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-text-primary">
+              Send me the community newsletter
+            </p>
+            <p className="mt-0.5 text-xs leading-relaxed text-text-muted">
+              Occasional updates from CodeBhaav  what we're building, what
+              members are shipping. Unsubscribe anytime.
+            </p>
+          </div>
+        </button>
 
         <p className="text-[12px] leading-relaxed text-text-muted">
           By continuing, you agree to our{" "}
@@ -790,6 +823,7 @@ export function WaitlistWizard({
     role: "",
     interests: [],
     reason: "",
+    newsletter: false,
   });
 
   const updateField = useCallback(
@@ -836,6 +870,7 @@ export function WaitlistWizard({
         interests: formData.interests,
         referredBy: refCode || undefined,
         imageUrl: user?.imageUrl || undefined,
+        newsletter: formData.newsletter,
       })
         .then((result) => {
           setIsSubmitting(false);
@@ -999,6 +1034,8 @@ export function WaitlistWizard({
                 <ReasonStep
                   value={formData.reason}
                   onChange={(v) => updateField("reason", v)}
+                  newsletter={formData.newsletter}
+                  onNewsletterChange={(v) => updateField("newsletter", v)}
                 />
               )}
             </motion.div>

@@ -2,6 +2,7 @@
 import "@/styles/global.css";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
+import AdminSidebarIsland from "@/components/react/islands/AdminSidebarIsland";
 
 // Auth gate lives in src/middleware.ts so non-admin requests never reach
 // this layout. By the time we render here the user is verified admin.
@@ -12,17 +13,6 @@ interface Props {
 }
 
 const { title, active } = Astro.props;
-
-const navItems = [
-	{ key: "overview", label: "Overview", href: "/admin", icon: "◐" },
-	{ key: "waitlist", label: "Waitlist", href: "/admin/waitlist", icon: "✶" },
-	{
-		key: "founding-members",
-		label: "Founding Members",
-		href: "/admin/founding-members",
-		icon: "◊",
-	},
-] as const;
 ---
 
 <!doctype html>
@@ -35,114 +25,17 @@ const navItems = [
 	</head>
 	<body class="bg-background text-text-primary antialiased">
 		<div class="flex min-h-screen">
-			<aside
-				class="hidden lg:flex lg:flex-col lg:w-[240px] lg:shrink-0 border-r border-border bg-surface sticky top-0 self-start max-h-screen"
-			>
-				<div class="flex h-16 items-center border-b border-border px-6">
-					<a
-						href="/"
-						class="flex items-center gap-2 text-base font-semibold tracking-tight text-text-primary"
-					>
-						<img
-							src="/logo-mark.svg"
-							alt=""
-							width={24}
-							height={24}
-							class="size-6"
-						/>
-						CodeBhaav
-					</a>
-				</div>
-				<div class="px-6 pt-5 pb-3">
-					<p
-						class="font-mono text-[10px] uppercase tracking-widest text-text-muted"
-					>
-						Admin
-					</p>
-				</div>
-				<nav class="flex flex-1 flex-col gap-1 px-3">
-					{
-						navItems.map((item) => (
-							<a
-								href={item.href}
-								class:list={[
-									"group flex items-center gap-3 rounded-button px-3 py-2 text-sm transition-colors",
-									active === item.key
-										? "bg-accent/10 text-accent"
-										: "text-text-secondary hover:bg-surface-hover hover:text-text-primary",
-								]}
-							>
-								<span
-									class:list={[
-										"font-mono text-xs",
-										active === item.key
-											? "text-accent"
-											: "text-text-muted group-hover:text-text-secondary",
-									]}
-								>
-									{item.icon}
-								</span>
-								{item.label}
-							</a>
-						))
-					}
-				</nav>
-				<div class="border-t border-border p-4">
-					<a
-						href="/dashboard"
-						class="flex items-center justify-between rounded-button px-3 py-2 text-xs text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
-					>
-						<span>Back to dashboard</span>
-						<span class="font-mono">→</span>
-					</a>
-				</div>
-			</aside>
-
+			<AdminSidebarIsland
+				client:load
+				active={active}
+				variant="desktop"
+			/>
 			<div class="flex-1 min-w-0 flex flex-col">
-				<header
-					class="lg:hidden h-14 flex items-center justify-between border-b border-border px-4 bg-surface"
-				>
-					<a
-						href="/"
-						class="flex items-center gap-2 text-sm font-semibold text-text-primary"
-					>
-						<img
-							src="/logo-mark.svg"
-							alt=""
-							width={20}
-							height={20}
-							class="size-5"
-						/>
-						CodeBhaav · Admin
-					</a>
-					<a
-						href="/dashboard"
-						class="font-mono text-[11px] uppercase tracking-widest text-text-muted hover:text-text-primary"
-					>
-						Exit
-					</a>
-				</header>
-
-				<nav
-					class="lg:hidden flex border-b border-border bg-surface overflow-x-auto"
-				>
-					{
-						navItems.map((item) => (
-							<a
-								href={item.href}
-								class:list={[
-									"flex-shrink-0 px-4 py-3 text-xs font-medium transition-colors whitespace-nowrap",
-									active === item.key
-										? "text-accent border-b-2 border-accent"
-										: "text-text-secondary hover:text-text-primary",
-								]}
-							>
-								{item.label}
-							</a>
-						))
-					}
-				</nav>
-
+				<AdminSidebarIsland
+					client:load
+					active={active}
+					variant="mobile"
+				/>
 				<main class="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
 					<slot />
 				</main>

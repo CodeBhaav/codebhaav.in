@@ -38,6 +38,7 @@ export const submitApplication = mutation({
 		motivation: v.string(),
 		commitment: v.string(),
 		ideas: v.optional(v.string()),
+		newsletter: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const clerkUserId = await requireUser(ctx);
@@ -71,6 +72,7 @@ export const submitApplication = mutation({
 			portfolio: args.portfolio,
 			skills: args.skills,
 			experience: args.experience,
+			newsletter: args.newsletter,
 		});
 
 		const id = await ctx.db.insert("foundingMember", {
@@ -81,11 +83,27 @@ export const submitApplication = mutation({
 			commitment: args.commitment,
 			ideas: args.ideas,
 			status: "submitted",
+			newsletter: args.newsletter ?? false,
 		});
 
 		await ctx.scheduler.runAfter(0, internal.email.sendFoundingMemberEmail, {
 			name: args.name,
 			email: args.email,
+		});
+
+		const subscribed = args.newsletter === true;
+		await ctx.scheduler.runAfter(0, internal.email.syncContact, {
+			email: args.email,
+			name: args.name,
+			properties: { application_status: "submitted" },
+			addSegments: ["founding_applicants"],
+			topics:
+				args.newsletter !== undefined
+					? {
+							community_updates: subscribed,
+							product_announcements: subscribed,
+						}
+					: undefined,
 		});
 
 		return { id };
@@ -116,6 +134,7 @@ export const getMyApplication = query({
 			motivation: application.motivation,
 			commitment: application.commitment,
 			ideas: application.ideas ?? "",
+			newsletter: application.newsletter ?? false,
 		};
 	},
 });
@@ -131,6 +150,7 @@ export const updateMyApplication = mutation({
 		motivation: v.string(),
 		commitment: v.string(),
 		ideas: v.optional(v.string()),
+		newsletter: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const clerkUserId = await requireUser(ctx);
@@ -160,13 +180,26 @@ export const updateMyApplication = mutation({
 			portfolio: args.portfolio,
 			skills: args.skills,
 			experience: args.experience,
+			newsletter: args.newsletter,
 		});
 
 		await ctx.db.patch(application._id, {
 			motivation: args.motivation,
 			commitment: args.commitment,
 			ideas: args.ideas,
+			...(args.newsletter !== undefined ? { newsletter: args.newsletter } : {}),
 		});
+
+		if (args.newsletter !== undefined) {
+			await ctx.scheduler.runAfter(0, internal.email.syncContact, {
+				email: application.email,
+				name: application.name,
+				topics: {
+					community_updates: args.newsletter,
+					product_announcements: args.newsletter,
+				},
+			});
+		}
 
 		return { id: application._id };
 	},

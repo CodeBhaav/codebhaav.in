@@ -17,6 +17,7 @@ export default defineSchema({
 		referralCount: v.number(),
 		originalCreatedAt: v.optional(v.number()),
 		imageUrl: v.optional(v.string()),
+		newsletter: v.optional(v.boolean()),
 	})
 		.index("by_email", ["email"])
 		.index("by_referralCode", ["referralCode"])
@@ -47,6 +48,7 @@ export default defineSchema({
 				v.literal("rejected"),
 			),
 		),
+		newsletter: v.optional(v.boolean()),
 	})
 		.index("by_email", ["email"])
 		.index("by_clerkUserId", ["clerkUserId"]),
@@ -59,6 +61,38 @@ export default defineSchema({
 		portfolio: v.optional(v.string()),
 		skills: v.optional(v.string()),
 		experience: v.optional(v.string()),
+		// Legacy single boolean  superseded by `topics` once the user
+		// goes through the multi-toggle settings page. Kept for backfill.
+		newsletter: v.optional(v.boolean()),
+		// Per-topic subscription state, keyed by TopicSlug
+		// (community_updates | product_announcements | event_invitations | founders_only).
+		topics: v.optional(
+			v.object({
+				community_updates: v.optional(v.boolean()),
+				product_announcements: v.optional(v.boolean()),
+				event_invitations: v.optional(v.boolean()),
+				founders_only: v.optional(v.boolean()),
+			}),
+		),
+		// Cached Resend contact id so we don't have to look it up by email
+		// for every sync. Populated on first successful upsert.
+		resendContactId: v.optional(v.string()),
 		updatedAt: v.number(),
 	}).index("by_clerkUserId", ["clerkUserId"]),
+
+	/**
+	 * Cache of Resend resource IDs created by the bootstrap action.
+	 * One row per (kind, slug). The action is idempotent: it lists what
+	 * exists in Resend, creates missing ones, and upserts the IDs here.
+	 */
+	resendConfig: defineTable({
+		kind: v.union(
+			v.literal("topic"),
+			v.literal("segment"),
+			v.literal("property"),
+		),
+		slug: v.string(),
+		resendId: v.string(),
+		updatedAt: v.number(),
+	}).index("by_kind_slug", ["kind", "slug"]),
 });

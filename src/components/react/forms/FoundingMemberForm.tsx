@@ -4,6 +4,7 @@ import { useUser } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
 import posthog from "posthog-js";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/react/ui/checkbox";
 
 interface FormData {
 	whatsapp: string;
@@ -15,6 +16,7 @@ interface FormData {
 	motivation: string;
 	commitment: string;
 	ideas: string;
+	newsletter: boolean;
 }
 
 interface FormErrors {
@@ -35,6 +37,7 @@ const INITIAL_FORM_DATA: FormData = {
 	motivation: "",
 	commitment: "",
 	ideas: "",
+	newsletter: false,
 };
 
 function validateForm(data: FormData): FormErrors {
@@ -414,6 +417,9 @@ export function FoundingMemberForm() {
 			ideas: hasApplication
 				? (existingApplication?.ideas ?? prev.ideas)
 				: prev.ideas,
+			newsletter: hasApplication
+				? (existingApplication?.newsletter ?? prev.newsletter)
+				: (profile?.newsletter ?? prev.newsletter),
 		}));
 		setPrefilled(true);
 	}, [profile, existingApplication, hasApplication, prefilled]);
@@ -432,6 +438,8 @@ export function FoundingMemberForm() {
 			motivation: existingApplication?.motivation ?? "",
 			commitment: existingApplication?.commitment ?? "",
 			ideas: existingApplication?.ideas ?? "",
+			newsletter:
+				existingApplication?.newsletter ?? profile?.newsletter ?? false,
 		});
 		setErrors({});
 		setSubmitError(null);
@@ -455,7 +463,7 @@ export function FoundingMemberForm() {
 	}, [savedAt]);
 
 	const updateField = useCallback(
-		(field: keyof FormData, value: string) => {
+		<K extends keyof FormData>(field: K, value: FormData[K]) => {
 			setFormData((prev) => ({ ...prev, [field]: value }));
 			setErrors((prev) => {
 				if (!prev[field as keyof FormErrors]) return prev;
@@ -496,6 +504,7 @@ export function FoundingMemberForm() {
 						motivation: formData.motivation.trim(),
 						commitment: formData.commitment.trim(),
 						ideas: formData.ideas.trim() || undefined,
+						newsletter: formData.newsletter,
 					});
 					posthog.capture("founding_member_application_updated");
 				} else {
@@ -511,6 +520,7 @@ export function FoundingMemberForm() {
 						motivation: formData.motivation.trim(),
 						commitment: formData.commitment.trim(),
 						ideas: formData.ideas.trim() || undefined,
+						newsletter: formData.newsletter,
 					});
 					posthog.identify(email, { name: fullName, email });
 					posthog.capture("founding_member_application_submitted", {
@@ -810,6 +820,34 @@ export function FoundingMemberForm() {
 						/>
 					</div>
 				</fieldset>
+
+				{/* Newsletter opt-in */}
+				<button
+					type="button"
+					onClick={() => updateField("newsletter", !formData.newsletter)}
+					className={cn(
+						"flex w-full items-start gap-3 rounded-card border bg-[#111113] px-4 py-3 text-left transition-colors",
+						formData.newsletter
+							? "border-[#F59E0B]/40 hover:border-[#F59E0B]/60"
+							: "border-[#1F1F23] hover:border-[#2f2f35]",
+					)}
+				>
+					<Checkbox
+						checked={formData.newsletter}
+						onCheckedChange={(v) => updateField("newsletter", v)}
+						tabIndex={-1}
+						className="mt-0.5"
+					/>
+					<div className="min-w-0">
+						<p className="text-sm font-medium text-[#FAFAFA]">
+							Send me the community newsletter
+						</p>
+						<p className="mt-0.5 text-xs leading-relaxed text-[#71717A]">
+							Occasional updates from CodeBhaav  what we're building, what
+							members are shipping. Unsubscribe anytime from your dashboard.
+						</p>
+					</div>
+				</button>
 
 				{/* Legal + Submit */}
 				<div className="space-y-4">
