@@ -21,6 +21,17 @@ export const onRequest = clerkMiddleware((auth, context) => {
 
 	const role = (sessionClaims as { metadata?: SessionMetadata } | null)
 		?.metadata?.role;
+
+	// Temporary debug log — shows what Clerk is actually sending in the
+	// session token. Check Cloudflare Pages → Functions → Logs after
+	// hitting /admin to see the shape. Remove once gate works.
+	console.log("[admin-guard]", {
+		userId,
+		role,
+		sessionClaimsKeys: sessionClaims ? Object.keys(sessionClaims) : null,
+		metadata: (sessionClaims as { metadata?: unknown } | null)?.metadata,
+	});
+
 	if (role !== "admin") {
 		return context.redirect("/dashboard");
 	}
