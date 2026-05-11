@@ -258,6 +258,74 @@ export function MentionComposer({
  * against the supplied mentions array. Anything that doesn't match falls
  * through as plain text.
  */
+interface MentionToken {
+	type: "text" | "mention";
+	value: string;
+	username?: string; // present only when the mention has a Clerk username
+}
+
+/**
+ * Map every recognizable handle (username or first-name fallback) back to
+ * a Clerk username, if one exists. Used to decide whether a rendered
+ * mention should be a link to /u/[username] or just stylized text.
+ */
+function buildHandleLookup(
+	mentions: Mention[],
+): { handles: string[]; usernameByHandle: Map<string, string> } {
+	const usernameByHandle = new Map<string, string>();
+	for (const m of mentions) {
+		if (m.username) {
+			usernameByHandle.set(m.username.toLowerCase(), m.username);
+		}
+		const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
+		if (first && m.username) {
+			// Old first-name mentions get linked too, when we know the username.
+			if (!usernameByHandle.has(first)) {
+				usernameByHandle.set(first, m.username);
+			}
+		}
+	}
+	const handles = new Set<string>();
+	for (const m of mentions) {
+		if (m.username) handles.add(m.username.toLowerCase());
+		const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
+		if (first) handles.add(first);
+		const firstCap = m.name.split(/\s+/)[0];
+		if (firstCap) handles.add(firstCap);
+	}
+	return { handles: Array.from(handles), usernameByHandle };
+}
+
+function tokenizeBody(body: string, mentions: Mention[]): MentionToken[] {
+	const { handles, usernameByHandle } = buildHandleLookup(mentions);
+	if (handles.length === 0) return [{ type: "text", value: body }];
+	const pattern = new RegExp(
+		`@(${handles
+			.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+			.join("|")})\\b`,
+		"gi",
+	);
+	const out: MentionToken[] = [];
+	let last = 0;
+	let match: RegExpExecArray | null;
+	while ((match = pattern.exec(body)) !== null) {
+		if (match.index > last) {
+			out.push({ type: "text", value: body.slice(last, match.index) });
+		}
+		const handle = match[1].toLowerCase();
+		out.push({
+			type: "mention",
+			value: match[0],
+			username: usernameByHandle.get(handle),
+		});
+		last = match.index + match[0].length;
+	}
+	if (last < body.length) {
+		out.push({ type: "text", value: body.slice(last) });
+	}
+	return out;
+}
+
 export function RenderedBody({
 	body,
 	mentions,
@@ -265,61 +333,34 @@ export function RenderedBody({
 	body: string;
 	mentions: Mention[];
 }) {
-	// Build a set of all possible handles  preferred username if available,
-	// plus the first-name fallback (case-insensitive). Older comments may
-	// have been written with first-name handles before usernames existed,
-	// so we still need to highlight those.
-	const handles = useMemo(() => {
-		const set = new Set<string>();
-		for (const m of mentions) {
-			if (m.username) set.add(m.username.toLowerCase());
-			const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
-			if (first) set.add(first);
-			// Also catch capitalized first-name (back-compat with old @Pranav style)
-			const firstCap = m.name.split(/\s+/)[0];
-			if (firstCap) set.add(firstCap);
-		}
-		return set;
-	}, [mentions]);
-
-	const tokens = useMemo(() => {
-		if (handles.size === 0) return [{ type: "text", value: body }];
-		const pattern = new RegExp(
-			`@(${Array.from(handles)
-				.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-				.join("|")})\\b`,
-			"gi",
-		);
-		const out: Array<{ type: "text" | "mention"; value: string }> = [];
-		let last = 0;
-		let match: RegExpExecArray | null;
-		while ((match = pattern.exec(body)) !== null) {
-			if (match.index > last) {
-				out.push({ type: "text", value: body.slice(last, match.index) });
-			}
-			out.push({ type: "mention", value: match[0] });
-			last = match.index + match[0].length;
-		}
-		if (last < body.length) {
-			out.push({ type: "text", value: body.slice(last) });
-		}
-		return out;
-	}, [body, handles]);
+	const tokens = useMemo(() => tokenizeBody(body, mentions), [body, mentions]);
 
 	return (
 		<p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-			{tokens.map((t, i) =>
-				t.type === "mention" ? (
+			{tokens.map((t, i) => {
+				if (t.type !== "mention") {
+					return <span key={i}>{t.value}</span>;
+				}
+				if (t.username) {
+					return (
+						<a
+							key={i}
+							href={`/u/${t.username}`}
+							className="rounded-[3px] bg-accent/10 px-1 font-medium text-accent transition-colors hover:bg-accent/20 hover:underline"
+						>
+							{t.value}
+						</a>
+					);
+				}
+				return (
 					<span
 						key={i}
 						className="rounded-[3px] bg-accent/10 px-1 font-medium text-accent"
 					>
 						{t.value}
 					</span>
-				) : (
-					<span key={i}>{t.value}</span>
-				),
-			)}
+				);
+			})}
 		</p>
 	);
 }
@@ -340,56 +381,22 @@ export function BackdropBody({
 	body: string;
 	mentions: Mention[];
 }) {
-	const handles = useMemo(() => {
-		const set = new Set<string>();
-		for (const m of mentions) {
-			if (m.username) set.add(m.username.toLowerCase());
-			const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
-			if (first) set.add(first);
-			const firstCap = m.name.split(/\s+/)[0];
-			if (firstCap) set.add(firstCap);
-		}
-		return set;
-	}, [mentions]);
-
-	const tokens = useMemo(() => {
-		if (handles.size === 0) return [{ type: "text" as const, value: body }];
-		const pattern = new RegExp(
-			`@(${Array.from(handles)
-				.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-				.join("|")})\\b`,
-			"gi",
-		);
-		const out: Array<{ type: "text" | "mention"; value: string }> = [];
-		let last = 0;
-		let match: RegExpExecArray | null;
-		while ((match = pattern.exec(body)) !== null) {
-			if (match.index > last) {
-				out.push({ type: "text", value: body.slice(last, match.index) });
-			}
-			out.push({ type: "mention", value: match[0] });
-			last = match.index + match[0].length;
-		}
-		if (last < body.length) {
-			out.push({ type: "text", value: body.slice(last) });
-		}
-		return out;
-	}, [body, handles]);
+	const tokens = useMemo(() => tokenizeBody(body, mentions), [body, mentions]);
 
 	return (
 		<>
 			{tokens.map((t, i) =>
 				t.type === "mention" ? (
+					// Visual-only mention pill behind the textarea  no anchor here
+					// since the textarea overlay swallows clicks. Keep zero-width
+					// styling so caret offsets in the textarea remain aligned.
 					<span
 						key={i}
-						// rounded BG must NOT change advance widths  no padding on
-						// the inline span, just background + color.
 						className="rounded-[2px] bg-accent/10 text-accent"
 					>
 						{t.value}
 					</span>
 				) : (
-					// Wrap plain text in a span so React keeps consistent DOM nodes.
 					<span key={i} className="text-text-primary">
 						{t.value}
 					</span>

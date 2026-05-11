@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
+import { captureIdentity } from "./userProfile";
 
 const MAX_COMMENT_LEN = 2000;
 
@@ -380,6 +381,7 @@ export const toggleInterest = mutation({
 	args: { projectId: v.id("project") },
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
+		await captureIdentity(ctx, identity);
 		const project = await ctx.db.get(args.projectId);
 		if (!project) throw new Error("Project not found");
 		if (project.status === "shipped") {
@@ -433,6 +435,7 @@ export const commentOnProject = mutation({
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
+		await captureIdentity(ctx, identity);
 		const project = await ctx.db.get(args.projectId);
 		if (!project) throw new Error("Project not found");
 

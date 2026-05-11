@@ -356,20 +356,51 @@ function CommentNode({
 					<p className="mb-1.5 flex items-center gap-1 font-mono text-[10px] text-text-muted">
 						<CornerDownRight className="size-3" aria-hidden />
 						<span>replying to</span>
-						<span className="text-accent">@{parentHandle}</span>
+						{parent.username ? (
+							<a
+								href={`/u/${parent.username}`}
+								className="text-accent transition-colors hover:underline"
+							>
+								@{parentHandle}
+							</a>
+						) : (
+							<span className="text-accent">@{parentHandle}</span>
+						)}
 					</p>
 				)}
 				<div className="flex items-start gap-3">
-					<Avatar name={comment.authorName} size={28} />
+					{comment.authorUsername ? (
+						<a
+							href={`/u/${comment.authorUsername}`}
+							className="shrink-0 rounded-full outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-accent/50"
+							aria-label={`View ${comment.authorName}'s profile`}
+						>
+							<Avatar name={comment.authorName} size={28} />
+						</a>
+					) : (
+						<Avatar name={comment.authorName} size={28} />
+					)}
 					<div className="min-w-0 flex-1">
 						<div className="flex flex-wrap items-baseline gap-2">
-							<p className="text-sm font-medium text-text-primary">
-								{comment.authorName}
-							</p>
+							{comment.authorUsername ? (
+								<a
+									href={`/u/${comment.authorUsername}`}
+									className="text-sm font-medium text-text-primary transition-colors hover:text-accent"
+								>
+									{comment.authorName}
+								</a>
+							) : (
+								<p className="text-sm font-medium text-text-primary">
+									{comment.authorName}
+								</p>
+							)}
 							{comment.authorUsername && (
-								<span className="font-mono text-[11px] text-text-muted">
+								<a
+									href={`/u/${comment.authorUsername}`}
+									className="font-mono text-[11px] text-text-muted transition-colors hover:text-accent"
+								>
 									@{comment.authorUsername}
-								</span>
+								</a>
 							)}
 							<span className="font-mono text-[10px] text-text-muted">
 								{formatRelative(comment.createdAt)}

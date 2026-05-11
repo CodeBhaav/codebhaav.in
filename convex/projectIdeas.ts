@@ -4,6 +4,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
+import { captureIdentity } from "./userProfile";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IDEAS_PER_DAY = 5;
@@ -56,6 +57,7 @@ export const submitIdea = mutation({
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
+		await captureIdentity(ctx, identity);
 		const title = args.title.trim();
 		const description = args.description.trim();
 
@@ -322,6 +324,7 @@ export const voteOnIdea = mutation({
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
+		await captureIdentity(ctx, identity);
 		const idea = await ctx.db.get(args.ideaId);
 		if (!idea) throw new Error("Idea not found");
 		if (idea.status !== "open") {
@@ -398,6 +401,7 @@ export const commentOnIdea = mutation({
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
+		await captureIdentity(ctx, identity);
 		const idea = await ctx.db.get(args.ideaId);
 		if (!idea) throw new Error("Idea not found");
 		if (idea.status === "rejected") {

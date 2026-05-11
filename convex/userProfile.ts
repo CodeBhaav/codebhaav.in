@@ -207,6 +207,62 @@ export interface UserProfileInput {
 	newsletter?: boolean;
 }
 
+interface CapturedIdentity {
+	subject: string;
+	name?: string;
+	givenName?: string;
+	familyName?: string;
+	preferredUsername?: string;
+}
+
+/**
+ * Side-effect helper: ensure the signed-in user has a `userProfile` row
+ * that caches their Clerk display name + preferred_username. Invoked from
+ * write paths (commenting, voting, volunteering) so /u/[username] has a
+ * canonical mapping to look up. Idempotent  no-op if the cached values
+ * already match. Safe to call without a username (just stores displayName).
+ */
+export async function captureIdentity(
+	ctx: MutationCtx,
+	identity: CapturedIdentity,
+): Promise<void> {
+	const displayName =
+		[identity.givenName, identity.familyName].filter(Boolean).join(" ").trim() ||
+		identity.name ||
+		undefined;
+	const username = identity.preferredUsername?.trim() || undefined;
+
+	const existing = await ctx.db
+		.query("userProfile")
+		.withIndex("by_clerkUserId", (q) => q.eq("clerkUserId", identity.subject))
+		.first();
+
+	if (existing) {
+		const patch: Partial<{
+			preferredUsername: string | undefined;
+			displayName: string | undefined;
+			updatedAt: number;
+		}> = {};
+		if (username !== existing.preferredUsername) {
+			patch.preferredUsername = username;
+		}
+		if (displayName && displayName !== existing.displayName) {
+			patch.displayName = displayName;
+		}
+		if (Object.keys(patch).length === 0) return;
+		patch.updatedAt = Date.now();
+		await ctx.db.patch(existing._id, patch);
+		return;
+	}
+
+	await ctx.db.insert("userProfile", {
+		clerkUserId: identity.subject,
+		...(username ? { preferredUsername: username } : {}),
+		...(displayName ? { displayName } : {}),
+		updatedAt: Date.now(),
+	});
+}
+
 /**
  * Internal upsert helper invoked from other mutations that collect profile
  * data as a side effect (e.g. submitApplication). Not exposed as a public

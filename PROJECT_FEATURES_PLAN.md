@@ -56,7 +56,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 2. User profile pages (`/u/[username]`) ⬜
+### 2. User profile pages (`/u/[username]`) ✅
 
 **Scope:** public profile page per user. Shows their submitted ideas (with status), projects they're a team member of (with role), projects they originated, total comment count. Clickable from any `@mention` or comment author header.
 
@@ -75,6 +75,16 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - User with no username falls back to non-clickable name
 - 404 page for unknown username
 - Self-profile via `/u/<own-username>` works; no separate `/me`
+
+### Notes / decisions
+- Added `preferredUsername` + `displayName` to `userProfile` plus a `by_username` index. New `captureIdentity` helper (in `convex/userProfile.ts`) is invoked from every authenticated write path (`submitIdea`, `voteOnIdea`, `commentOnIdea`, `commentOnProject`, `toggleInterest`) — lazily seeds the lookup table without a separate backfill script.
+- `getProfileByUsername` falls back to scanning `ideaComment` / `projectComment` for `authorUsername` when no `userProfile` row exists yet. Acceptable at our scale and self-heals once the user takes another action.
+- `BackdropBody` does *not* render `<a>` for mentions — the textarea sits on top and swallows clicks anyway. Both render functions now share `tokenizeBody` so styling stays consistent.
+- `RenderedBody` only links mentions whose `username` is known on the mention record. Old comments mentioning by first-name still get the highlight pill (back-compat) but stay non-clickable until someone re-mentions them with a username.
+- "Replying to @X" breadcrumb is also a link when the parent comment has a username.
+- Comment avatar + author name + `@username` row are all links.
+- Stat "Comments" counts both `ideaComment` and `projectComment` authored by the user — full table scans are fine at current scale.
+- Rejected ideas are hidden from non-owner profile visitors but visible on your own profile.
 
 ---
 

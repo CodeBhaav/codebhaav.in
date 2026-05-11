@@ -1,0 +1,17 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProfileIsland from "@/components/react/islands/ProfileIsland";
+
+export const prerender = false;
+
+const { username } = Astro.params;
+if (!username) {
+	return Astro.redirect("/projects");
+}
+---
+
+<BaseLayout title={`@${username}`}>
+	<section class="mx-auto max-w-4xl px-4 sm:px-6 py-16 md:py-20">
+		<ProfileIsland client:only="react" username={username} />
+	</section>
+</BaseLayout>

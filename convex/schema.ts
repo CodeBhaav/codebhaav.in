@@ -55,6 +55,10 @@ export default defineSchema({
 
 	userProfile: defineTable({
 		clerkUserId: v.string(),
+		// Cached Clerk identity  populated lazily whenever the user takes an
+		// action that goes through `captureIdentity`. Powers /u/[username].
+		preferredUsername: v.optional(v.string()),
+		displayName: v.optional(v.string()),
 		whatsapp: v.optional(v.string()),
 		github: v.optional(v.string()),
 		linkedin: v.optional(v.string()),
@@ -78,7 +82,9 @@ export default defineSchema({
 		// for every sync. Populated on first successful upsert.
 		resendContactId: v.optional(v.string()),
 		updatedAt: v.number(),
-	}).index("by_clerkUserId", ["clerkUserId"]),
+	})
+		.index("by_clerkUserId", ["clerkUserId"])
+		.index("by_username", ["preferredUsername"]),
 
 	/**
 	 * Cache of Resend resource IDs created by the bootstrap action.
