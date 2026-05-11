@@ -114,11 +114,14 @@ export const listIdeas = query({
 			.withIndex("by_status", (q) => q.eq("status", "open"))
 			.collect();
 
+		const scoreOf = (r: { upvoteCount: number; downvoteCount?: number }) =>
+			r.upvoteCount - (r.downvoteCount ?? 0);
+
 		const sorted = [...allOpen].sort((a, b) => {
 			if (sort === "top") {
-				if (b.upvoteCount !== a.upvoteCount) {
-					return b.upvoteCount - a.upvoteCount;
-				}
+				const sa = scoreOf(a);
+				const sb = scoreOf(b);
+				if (sb !== sa) return sb - sa;
 				return b._creationTime - a._creationTime;
 			}
 			return b._creationTime - a._creationTime;
@@ -126,9 +129,8 @@ export const listIdeas = query({
 
 		const rows = sorted.slice(0, limit);
 
-		// Compute "did the signed-in user already upvote?" in one shot.
 		const identity = await ctx.auth.getUserIdentity();
-		const myVotedIds = new Set<string>();
+		const myVotes = new Map<string, "up" | "down">();
 		if (identity) {
 			for (const idea of rows) {
 				const vote = await ctx.db
@@ -137,7 +139,7 @@ export const listIdeas = query({
 						q.eq("ideaId", idea._id).eq("clerkUserId", identity.subject),
 					)
 					.first();
-				if (vote) myVotedIds.add(idea._id);
+				if (vote) myVotes.set(idea._id, vote.direction ?? "up");
 			}
 		}
 
@@ -147,9 +149,10 @@ export const listIdeas = query({
 			description: row.description,
 			submitterName: row.submitterName,
 			upvoteCount: row.upvoteCount,
+			downvoteCount: row.downvoteCount ?? 0,
 			commentCount: row.commentCount,
 			submittedAt: row._creationTime,
-			youVoted: myVotedIds.has(row._id),
+			myVote: myVotes.get(row._id) ?? null,
 		}));
 	},
 });
@@ -168,7 +171,7 @@ export const getIdea = query({
 		}
 
 		const identity = await ctx.auth.getUserIdentity();
-		let youVoted = false;
+		let myVote: "up" | "down" | null = null;
 		if (identity) {
 			const v = await ctx.db
 				.query("projectIdeaVote")
@@ -176,7 +179,7 @@ export const getIdea = query({
 					q.eq("ideaId", idea._id).eq("clerkUserId", identity.subject),
 				)
 				.first();
-			youVoted = Boolean(v);
+			if (v) myVote = v.direction ?? "up";
 		}
 
 		const comments = await ctx.db
@@ -193,9 +196,10 @@ export const getIdea = query({
 			submitterName: idea.submitterName,
 			submitterClerkUserId: idea.submitterClerkUserId,
 			upvoteCount: idea.upvoteCount,
+			downvoteCount: idea.downvoteCount ?? 0,
 			commentCount: idea.commentCount,
 			submittedAt: idea._creationTime,
-			youVoted,
+			myVote,
 			promotedToProjectId: idea.promotedToProjectId ?? null,
 			rejectedReason: idea.rejectedReason ?? null,
 			comments: comments.map((c) => ({
@@ -203,12 +207,7 @@ export const getIdea = query({
 				authorName: c.authorName,
 				body: c.body,
 				createdAt: c._creationTime,
-				mine:
-					identity?.subject === c.clerkUserId
-						? true
-						: identity
-							? false
-							: false,
+				mine: identity?.subject === c.clerkUserId,
 			})),
 		};
 	},
@@ -233,6 +232,7 @@ export const listMyIdeas = query({
 			title: i.title,
 			status: i.status,
 			upvoteCount: i.upvoteCount,
+			downvoteCount: i.downvoteCount ?? 0,
 			commentCount: i.commentCount,
 			submittedAt: i._creationTime,
 			promotedToProjectId: i.promotedToProjectId ?? null,
@@ -243,8 +243,20 @@ export const listMyIdeas = query({
 
 /* ─── Voting ─────────────────────────────────────────────────────────── */
 
-export const toggleUpvote = mutation({
-	args: { ideaId: v.id("projectIdea") },
+/**
+ * Vote on an idea. Click your current direction again to clear; click the
+ * opposite to flip. Counters are denormalized for cheap sort/listing.
+ *
+ * Behavior:
+ *   no existing vote     -> insert vote(direction), +1 to that counter
+ *   same direction click -> delete vote, -1 from that counter
+ *   opposite click       -> patch direction, -1 from old / +1 to new
+ */
+export const voteOnIdea = mutation({
+	args: {
+		ideaId: v.id("projectIdea"),
+		direction: v.union(v.literal("up"), v.literal("down")),
+	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
 		const idea = await ctx.db.get(args.ideaId);
@@ -260,20 +272,51 @@ export const toggleUpvote = mutation({
 			)
 			.first();
 
-		if (existing) {
+		const upCount = idea.upvoteCount;
+		const downCount = idea.downvoteCount ?? 0;
+		const existingDir = existing?.direction ?? "up"; // legacy rows = up
+
+		if (existing && existingDir === args.direction) {
+			// Toggle off
 			await ctx.db.delete(existing._id);
-			await ctx.db.patch(args.ideaId, {
-				upvoteCount: Math.max(0, idea.upvoteCount - 1),
-			});
-			return { voted: false, upvoteCount: Math.max(0, idea.upvoteCount - 1) };
+			const next = {
+				upvoteCount: args.direction === "up" ? Math.max(0, upCount - 1) : upCount,
+				downvoteCount:
+					args.direction === "down" ? Math.max(0, downCount - 1) : downCount,
+			};
+			await ctx.db.patch(args.ideaId, next);
+			return { myVote: null as null, ...next };
 		}
 
+		if (existing && existingDir !== args.direction) {
+			// Flip
+			await ctx.db.patch(existing._id, { direction: args.direction });
+			const next =
+				args.direction === "up"
+					? {
+							upvoteCount: upCount + 1,
+							downvoteCount: Math.max(0, downCount - 1),
+						}
+					: {
+							upvoteCount: Math.max(0, upCount - 1),
+							downvoteCount: downCount + 1,
+						};
+			await ctx.db.patch(args.ideaId, next);
+			return { myVote: args.direction, ...next };
+		}
+
+		// Fresh vote
 		await ctx.db.insert("projectIdeaVote", {
 			ideaId: args.ideaId,
 			clerkUserId: identity.subject,
+			direction: args.direction,
 		});
-		await ctx.db.patch(args.ideaId, { upvoteCount: idea.upvoteCount + 1 });
-		return { voted: true, upvoteCount: idea.upvoteCount + 1 };
+		const next =
+			args.direction === "up"
+				? { upvoteCount: upCount + 1, downvoteCount: downCount }
+				: { upvoteCount: upCount, downvoteCount: downCount + 1 };
+		await ctx.db.patch(args.ideaId, next);
+		return { myVote: args.direction, ...next };
 	},
 });
 
@@ -360,10 +403,12 @@ export const listIdeasForAdmin = query({
 				.withIndex("by_status", (q) => q.eq("status", status))
 				.collect();
 		}
+		const scoreOf = (r: { upvoteCount: number; downvoteCount?: number }) =>
+			r.upvoteCount - (r.downvoteCount ?? 0);
 		rows.sort((a, b) => {
-			if (b.upvoteCount !== a.upvoteCount) {
-				return b.upvoteCount - a.upvoteCount;
-			}
+			const sa = scoreOf(a);
+			const sb = scoreOf(b);
+			if (sb !== sa) return sb - sa;
 			return b._creationTime - a._creationTime;
 		});
 		return rows.map((r) => ({
@@ -374,6 +419,7 @@ export const listIdeasForAdmin = query({
 			submitterName: r.submitterName,
 			submitterEmail: r.submitterEmail,
 			upvoteCount: r.upvoteCount,
+			downvoteCount: r.downvoteCount ?? 0,
 			commentCount: r.commentCount,
 			submittedAt: r._creationTime,
 			rejectedReason: r.rejectedReason ?? null,

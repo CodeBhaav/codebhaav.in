@@ -128,12 +128,26 @@ export function AdminIdeasPanel() {
 								className="px-6 py-4 transition-colors hover:bg-surface/40"
 							>
 								<div className="flex items-start gap-4">
-									<div className="flex w-12 shrink-0 flex-col items-center justify-center rounded-button border border-border bg-card py-2">
-										<span className="font-mono text-sm font-medium text-text-primary tabular-nums">
-											{idea.upvoteCount}
+									<div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-button border border-border bg-card py-2">
+										<span
+											className={cn(
+												"font-mono text-base font-semibold tabular-nums",
+												idea.upvoteCount - idea.downvoteCount > 0
+													? "text-text-primary"
+													: idea.upvoteCount - idea.downvoteCount < 0
+														? "text-rose-300"
+														: "text-text-muted",
+											)}
+										>
+											{idea.upvoteCount - idea.downvoteCount}
 										</span>
-										<span className="font-mono text-[9px] uppercase tracking-widest text-text-muted">
-											votes
+										<span className="mt-0.5 font-mono text-[9px] text-text-muted">
+											<span className="text-emerald-300/80">
+												{idea.upvoteCount}↑
+											</span>{" "}
+											<span className="text-rose-300/80">
+												{idea.downvoteCount}↓
+											</span>
 										</span>
 									</div>
 									<div className="min-w-0 flex-1">

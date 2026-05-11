@@ -16,7 +16,7 @@ export function IdeasListPanel() {
 	const [sort, setSort] = useState<Sort>("top");
 	const [composerOpen, setComposerOpen] = useState(false);
 	const ideas = useQuery(api.projectIdeas.listIdeas, { sort, limit: 100 });
-	const toggleUpvote = useMutation(api.projectIdeas.toggleUpvote);
+	const voteOnIdea = useMutation(api.projectIdeas.voteOnIdea);
 
 	return (
 		<div className="space-y-6">
@@ -90,9 +90,10 @@ export function IdeasListPanel() {
 						<IdeaRow
 							key={idea.id}
 							idea={idea}
-							onUpvote={async () => {
-								await toggleUpvote({
+							onVote={async (direction) => {
+								await voteOnIdea({
 									ideaId: idea.id as Id<"projectIdea">,
+									direction,
 								});
 							}}
 						/>
@@ -109,17 +110,18 @@ interface IdeaSummary {
 	description: string;
 	submitterName: string;
 	upvoteCount: number;
+	downvoteCount: number;
 	commentCount: number;
 	submittedAt: number;
-	youVoted: boolean;
+	myVote: "up" | "down" | null;
 }
 
 function IdeaRow({
 	idea,
-	onUpvote,
+	onVote,
 }: {
 	idea: IdeaSummary;
-	onUpvote: () => Promise<void>;
+	onVote: (direction: "up" | "down") => Promise<void>;
 }) {
 	const href = `/ideas/${idea.id}`;
 	return (
@@ -129,9 +131,10 @@ function IdeaRow({
 				className="group flex items-stretch gap-4 rounded-card border border-border bg-card p-4 transition-colors hover:border-border-hover"
 			>
 				<VoteButton
-					count={idea.upvoteCount}
-					voted={idea.youVoted}
-					onToggle={onUpvote}
+					upvotes={idea.upvoteCount}
+					downvotes={idea.downvoteCount}
+					myVote={idea.myVote}
+					onVote={onVote}
 					size="lg"
 				/>
 				<div className="min-w-0 flex-1">

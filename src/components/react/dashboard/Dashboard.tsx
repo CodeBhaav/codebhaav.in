@@ -145,6 +145,7 @@ function MyIdeasCard({
 		title: string;
 		status: "open" | "promoted" | "rejected";
 		upvoteCount: number;
+		downvoteCount: number;
 		commentCount: number;
 		submittedAt: number;
 		rejectedReason: string | null;
@@ -196,7 +197,12 @@ function MyIdeasCard({
 										{idea.title}
 									</p>
 									<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-mono text-text-muted">
-										<span>{idea.upvoteCount} votes</span>
+										<span>
+											{idea.upvoteCount - idea.downvoteCount} score
+											<span className="ml-1 text-text-muted/70">
+												({idea.upvoteCount}↑ {idea.downvoteCount}↓)
+											</span>
+										</span>
 										<span className="inline-flex items-center gap-1">
 											<MessageSquare className="size-3" aria-hidden />
 											{idea.commentCount}

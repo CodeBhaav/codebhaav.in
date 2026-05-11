@@ -105,6 +105,8 @@ export default defineSchema({
 		submitterEmail: v.string(),
 		submitterName: v.string(),
 		upvoteCount: v.number(),
+		// Optional for back-compat with pre-downvote rows. Treat missing as 0.
+		downvoteCount: v.optional(v.number()),
 		commentCount: v.number(),
 		status: v.union(
 			v.literal("open"),
@@ -121,6 +123,8 @@ export default defineSchema({
 	projectIdeaVote: defineTable({
 		ideaId: v.id("projectIdea"),
 		clerkUserId: v.string(),
+		// Optional for back-compat with pre-downvote rows  treat missing as "up".
+		direction: v.optional(v.union(v.literal("up"), v.literal("down"))),
 	})
 		.index("by_idea_user", ["ideaId", "clerkUserId"])
 		.index("by_user", ["clerkUserId"]),

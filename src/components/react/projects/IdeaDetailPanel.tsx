@@ -14,7 +14,7 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 	const idea = useQuery(api.projectIdeas.getIdea, {
 		id: ideaId as Id<"projectIdea">,
 	});
-	const toggleUpvote = useMutation(api.projectIdeas.toggleUpvote);
+	const voteOnIdea = useMutation(api.projectIdeas.voteOnIdea);
 	const postComment = useMutation(api.projectIdeas.commentOnIdea);
 	const deleteComment = useMutation(api.projectIdeas.deleteMyComment);
 
@@ -33,10 +33,14 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 
 			<article className="flex items-start gap-5 rounded-card border border-border bg-card p-6">
 				<VoteButton
-					count={idea.upvoteCount}
-					voted={idea.youVoted}
-					onToggle={async () => {
-						await toggleUpvote({ ideaId: idea.id as Id<"projectIdea"> });
+					upvotes={idea.upvoteCount}
+					downvotes={idea.downvoteCount}
+					myVote={idea.myVote}
+					onVote={async (direction) => {
+						await voteOnIdea({
+							ideaId: idea.id as Id<"projectIdea">,
+							direction,
+						});
 					}}
 					size="lg"
 					disabled={idea.status !== "open"}
