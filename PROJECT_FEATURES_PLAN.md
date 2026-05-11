@@ -221,7 +221,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 7. Custom OG images per project / idea ⬜
+### 7. Custom OG images per project / idea ✅
 
 **Scope:** dynamic OG images for `/projects/[slug]` and `/ideas/[id]` so X/WhatsApp/Slack link previews look like proper cards.
 
@@ -232,6 +232,13 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - Reuse design language from the existing `/api/og.png` (founder card).
 
 **Caching:** Cloudflare edge cache headers — `cache-control: public, s-maxage=3600` is fine; project metadata doesn't change often, and re-render on slug change is automatic.
+
+### Notes / decisions
+- Two new endpoints — `/api/og/project.png?slug=…` and `/api/og/idea.png?id=…` — modeled exactly on the existing `og.png.ts` (workers-og + Inter OTFs cached in-module).
+- New `ProjectCard` and `IdeaCard` templates extend the existing OG design language (warm spotlight, accent dot, inner frame). Project card features status pill, tech-stack chips (max 5 + "+N more"), and the bottom stat strip; idea card features the score chip + author byline.
+- Both endpoints return a stub card when Convex lookup fails — guarantees scrapers always get an image even on slug typos.
+- Cache: `public, max-age=3600, s-maxage=3600` (1h) since project metadata changes occasionally; the existing `og.png` route uses `immutable` because referral content doesn't change post-creation.
+- `[slug].astro` + `[id].astro` pass the dynamic OG URL through to BaseLayout's existing `ogImage` prop. The layout already resolves relative URLs against `Astro.url`, so previews use the correct hostname automatically.
 
 ---
 
