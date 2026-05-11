@@ -129,11 +129,15 @@ export function ProjectDetailPanel({ slug }: Props) {
 			<section className="rounded-card border border-border bg-card p-6">
 				<CommentThread
 					comments={project.comments}
-					placeholder="Shape this project  features, scope, concerns, suggestions."
-					onPost={async (body) => {
+					placeholder="Shape this project  features, scope, concerns, suggestions. Type @ to mention someone."
+					onPost={async ({ body, parentId, mentions }) => {
 						await postComment({
 							projectId: project.id as Id<"project">,
 							body,
+							...(parentId
+								? { parentId: parentId as Id<"projectComment"> }
+								: {}),
+							...(mentions.length > 0 ? { mentions } : {}),
 						});
 					}}
 					onDelete={async (commentId) => {

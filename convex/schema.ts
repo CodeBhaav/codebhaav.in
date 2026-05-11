@@ -134,6 +134,20 @@ export default defineSchema({
 		clerkUserId: v.string(),
 		authorName: v.string(),
 		body: v.string(),
+		// Threading  null/absent for top-level comments. Reply comments
+		// point at their parent. Tree depth handled in the frontend.
+		parentId: v.optional(v.id("ideaComment")),
+		// Inline @mentions: array of (clerkUserId, name-at-mention-time)
+		// snapshots. The body itself contains the `@Name` substrings; this
+		// array is the metadata for highlighting + future notifications.
+		mentions: v.optional(
+			v.array(
+				v.object({
+					clerkUserId: v.string(),
+					name: v.string(),
+				}),
+			),
+		),
 	}).index("by_idea", ["ideaId"]),
 
 	/* ─── Projects (curated, promoted from ideas by the admin) ──────── */
@@ -182,6 +196,15 @@ export default defineSchema({
 		clerkUserId: v.string(),
 		authorName: v.string(),
 		body: v.string(),
+		parentId: v.optional(v.id("projectComment")),
+		mentions: v.optional(
+			v.array(
+				v.object({
+					clerkUserId: v.string(),
+					name: v.string(),
+				}),
+			),
+		),
 	}).index("by_project", ["projectId"]),
 
 	/**

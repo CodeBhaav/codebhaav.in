@@ -174,9 +174,12 @@ export const getProjectBySlug = query({
 			comments: comments.map((c) => ({
 				id: c._id,
 				authorName: c.authorName,
+				clerkUserId: c.clerkUserId,
 				body: c.body,
 				createdAt: c._creationTime,
 				mine: identity?.subject === c.clerkUserId,
+				parentId: c.parentId ?? null,
+				mentions: c.mentions ?? [],
 			})),
 		};
 	},
@@ -286,6 +289,12 @@ export const commentOnProject = mutation({
 	args: {
 		projectId: v.id("project"),
 		body: v.string(),
+		parentId: v.optional(v.id("projectComment")),
+		mentions: v.optional(
+			v.array(
+				v.object({ clerkUserId: v.string(), name: v.string() }),
+			),
+		),
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
@@ -298,11 +307,28 @@ export const commentOnProject = mutation({
 			throw new Error(`Comment must be under ${MAX_COMMENT_LEN} characters`);
 		}
 
+		if (args.parentId) {
+			const parent = await ctx.db.get(args.parentId);
+			if (!parent || parent.projectId !== args.projectId) {
+				throw new Error("Invalid parent comment");
+			}
+		}
+
+		const dedupedMentions = args.mentions
+			? Array.from(
+					new Map(args.mentions.map((m) => [m.clerkUserId, m])).values(),
+				).slice(0, 20)
+			: undefined;
+
 		const id = await ctx.db.insert("projectComment", {
 			projectId: args.projectId,
 			clerkUserId: identity.subject,
 			authorName: readableName(identity),
 			body,
+			...(args.parentId ? { parentId: args.parentId } : {}),
+			...(dedupedMentions && dedupedMentions.length > 0
+				? { mentions: dedupedMentions }
+				: {}),
 		});
 		await ctx.db.patch(args.projectId, {
 			commentCount: project.commentCount + 1,

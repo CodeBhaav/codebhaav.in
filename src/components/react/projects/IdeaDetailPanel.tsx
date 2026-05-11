@@ -87,10 +87,14 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 			<section className="rounded-card border border-border bg-card p-6">
 				<CommentThread
 					comments={idea.comments}
-					onPost={async (body) => {
+					onPost={async ({ body, parentId, mentions }) => {
 						await postComment({
 							ideaId: idea.id as Id<"projectIdea">,
 							body,
+							...(parentId
+								? { parentId: parentId as Id<"ideaComment"> }
+								: {}),
+							...(mentions.length > 0 ? { mentions } : {}),
 						});
 					}}
 					onDelete={async (commentId) => {
