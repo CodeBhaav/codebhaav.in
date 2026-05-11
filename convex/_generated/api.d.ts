@@ -27,6 +27,7 @@ import type * as profiles from "../profiles.js";
 import type * as projectCategories from "../projectCategories.js";
 import type * as projectIdeas from "../projectIdeas.js";
 import type * as projects from "../projects.js";
+import type * as reactions from "../reactions.js";
 import type * as resendConfig from "../resendConfig.js";
 import type * as resendResources from "../resendResources.js";
 import type * as userProfile from "../userProfile.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   projectCategories: typeof projectCategories;
   projectIdeas: typeof projectIdeas;
   projects: typeof projects;
+  reactions: typeof reactions;
   resendConfig: typeof resendConfig;
   resendResources: typeof resendResources;
   userProfile: typeof userProfile;

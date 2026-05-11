@@ -7,6 +7,7 @@ import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
 import { enqueueNotification } from "./notifications";
 import { normalizeCategories } from "./projectCategories";
+import { aggregateReactionsForComments } from "./reactions";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IDEAS_PER_DAY = 5;
@@ -268,6 +269,11 @@ export const listIdeaComments = query({
 
 		const identity = await ctx.auth.getUserIdentity();
 		const everything = [...topLevels.page, ...allChildren];
+		const reactionsByComment = await aggregateReactionsForComments(
+			ctx,
+			"ideaComment",
+			everything.map((c) => c._id),
+		);
 		return {
 			...topLevels,
 			page: everything.map((c) => ({
@@ -280,6 +286,7 @@ export const listIdeaComments = query({
 				mine: identity?.subject === c.clerkUserId,
 				parentId: c.parentId ?? null,
 				mentions: c.mentions ?? [],
+				reactions: reactionsByComment.get(c._id) ?? [],
 			})),
 		};
 	},

@@ -28,6 +28,7 @@ export function ProjectDetailPanel({ slug }: Props) {
 	const toggleInterest = useMutation(api.projects.toggleInterest);
 	const postComment = useMutation(api.projects.commentOnProject);
 	const deleteComment = useMutation(api.projects.deleteMyProjectComment);
+	const toggleReaction = useMutation(api.reactions.toggleReaction);
 
 	if (project === undefined) return <LoadingState />;
 	if (project === null) return <NotFound />;
@@ -128,6 +129,13 @@ export function ProjectDetailPanel({ slug }: Props) {
 							onDelete={async (commentId) => {
 								await deleteComment({
 									commentId: commentId as Id<"projectComment">,
+								});
+							}}
+							onToggleReaction={async (commentId, emoji) => {
+								await toggleReaction({
+									parentKind: "projectComment",
+									parentId: commentId,
+									emoji,
 								});
 							}}
 						/>

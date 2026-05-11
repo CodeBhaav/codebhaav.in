@@ -195,7 +195,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 6. Comment reactions ⬜
+### 6. Comment reactions ✅
 
 **Scope:** small emoji reactions (`👍 ❤️ 💡 🚀`) on every comment. One reaction per emoji per user per comment.
 
@@ -211,6 +211,13 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - `convex/projectIdeas.ts` + `convex/projects.ts`: `toggleReaction({ commentId, emoji })` mutation each (or shared in new `convex/reactions.ts`)
 - Update `getIdea` / `listIdeaComments` / `listProjectComments` to return aggregated reactions: `{ "👍": { count: 5, mine: true }, ... }` per comment
 - `CommentThread.tsx` — reaction picker (small smile icon → emoji palette) + horizontal pill row showing counts. Click a pill to toggle your reaction.
+
+### Notes / decisions
+- Schema uses flat fields (`parentKind` + `parentId: v.string()`) instead of a `v.union` discriminated parent. Flat fields play nicer with compound indexes; we lose a small amount of referential typing but the `toggleReaction` mutation re-validates the parent exists on every write.
+- Aggregation lives in a shared `aggregateReactionsForComments` helper in `convex/reactions.ts`. Called from both `listIdeaComments` and `listProjectComments`. Currently does a full table `collect()` — fine at our scale; an indexed per-comment loop would be O(N) round-trips so this is actually preferable for now.
+- Emoji order matches the picker order, so the pill row stays visually stable as users add reactions.
+- "React" button replaces the smile icon plus action label, sits left of "Reply". Anonymous users get bumped to /sign-in on click.
+- A user can react with multiple different emojis on the same comment; click your own emoji again to remove.
 
 ---
 

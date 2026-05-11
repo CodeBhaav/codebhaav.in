@@ -7,6 +7,7 @@ import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
 import { enqueueNotification } from "./notifications";
 import { normalizeCategories } from "./projectCategories";
+import { aggregateReactionsForComments } from "./reactions";
 
 const MAX_COMMENT_LEN = 2000;
 
@@ -308,6 +309,11 @@ export const listProjectComments = query({
 
 		const identity = await ctx.auth.getUserIdentity();
 		const everything = [...topLevels.page, ...allChildren];
+		const reactionsByComment = await aggregateReactionsForComments(
+			ctx,
+			"projectComment",
+			everything.map((c) => c._id),
+		);
 		return {
 			...topLevels,
 			page: everything.map((c) => ({
@@ -320,6 +326,7 @@ export const listProjectComments = query({
 				mine: identity?.subject === c.clerkUserId,
 				parentId: c.parentId ?? null,
 				mentions: c.mentions ?? [],
+				reactions: reactionsByComment.get(c._id) ?? [],
 			})),
 		};
 	},

@@ -24,6 +24,7 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 	const voteOnIdea = useMutation(api.projectIdeas.voteOnIdea);
 	const postComment = useMutation(api.projectIdeas.commentOnIdea);
 	const deleteComment = useMutation(api.projectIdeas.deleteMyComment);
+	const toggleReaction = useMutation(api.reactions.toggleReaction);
 
 	if (idea === undefined) return <LoadingState />;
 	if (idea === null) return <NotFound />;
@@ -110,6 +111,13 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 					onDelete={async (commentId) => {
 						await deleteComment({
 							commentId: commentId as Id<"ideaComment">,
+						});
+					}}
+					onToggleReaction={async (commentId, emoji) => {
+						await toggleReaction({
+							parentKind: "ideaComment",
+							parentId: commentId,
+							emoji,
 						});
 					}}
 				/>

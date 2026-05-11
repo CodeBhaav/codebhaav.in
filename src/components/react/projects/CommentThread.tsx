@@ -1,12 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SignInButton, useUser } from "@clerk/clerk-react";
 import {
 	ChevronDown,
 	ChevronRight,
 	CornerDownRight,
+	SmilePlus,
 	Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ALLOWED_REACTION_EMOJIS } from "../../../../convex/reactions";
 import { Avatar, formatRelative } from "../admin/AdminOverview";
 import {
 	MentionComposer,
@@ -14,6 +16,12 @@ import {
 	RenderedBody,
 	mentionHandle,
 } from "./MentionComposer";
+
+export interface ReactionAggregate {
+	emoji: string;
+	count: number;
+	mine: boolean;
+}
 
 export interface CommentItem {
 	id: string;
@@ -25,6 +33,7 @@ export interface CommentItem {
 	mine: boolean;
 	parentId: string | null;
 	mentions: Mention[];
+	reactions?: ReactionAggregate[];
 }
 
 interface PostArgs {
@@ -37,6 +46,7 @@ interface Props {
 	comments: CommentItem[];
 	onPost: (args: PostArgs) => Promise<void>;
 	onDelete: (commentId: string) => Promise<void>;
+	onToggleReaction?: (commentId: string, emoji: string) => Promise<void>;
 	placeholder?: string;
 	className?: string;
 	// Optional pagination (passed from usePaginatedQuery in the caller).
@@ -93,6 +103,7 @@ export function CommentThread({
 	comments,
 	onPost,
 	onDelete,
+	onToggleReaction,
 	placeholder = "Add a comment, suggestion, or question. Type @ to mention someone.",
 	className,
 	loadStatus,
@@ -213,6 +224,7 @@ export function CommentThread({
 							parentMeta={parentMeta}
 							onPost={onPost}
 							onDelete={onDelete}
+							onToggleReaction={onToggleReaction}
 						/>
 					))}
 				</ul>
@@ -246,12 +258,14 @@ function CommentNode({
 	parentMeta,
 	onPost,
 	onDelete,
+	onToggleReaction,
 }: {
 	node: TreeNode;
 	depth: number;
 	parentMeta: Map<string, { name: string; username?: string }>;
 	onPost: Props["onPost"];
 	onDelete: Props["onDelete"];
+	onToggleReaction?: Props["onToggleReaction"];
 }) {
 	const { user } = useUser();
 	const [replying, setReplying] = useState(false);
@@ -418,7 +432,21 @@ function CommentNode({
 								mentions={comment.mentions}
 							/>
 						</div>
+						{onToggleReaction && (
+							<ReactionsRow
+								commentId={comment.id}
+								reactions={comment.reactions ?? []}
+								onToggle={onToggleReaction}
+							/>
+						)}
 						<div className="mt-2 flex items-center gap-3">
+							{onToggleReaction && (
+								<ReactionPicker
+									commentId={comment.id}
+									reactions={comment.reactions ?? []}
+									onToggle={onToggleReaction}
+								/>
+							)}
 							<button
 								type="button"
 								onClick={startReply}
@@ -500,11 +528,126 @@ function CommentNode({
 							parentMeta={parentMeta}
 							onPost={onPost}
 							onDelete={onDelete}
+							onToggleReaction={onToggleReaction}
 						/>
 					))}
 				</ul>
 			)}
 		</li>
+	);
+}
+
+function ReactionsRow({
+	commentId,
+	reactions,
+	onToggle,
+}: {
+	commentId: string;
+	reactions: ReactionAggregate[];
+	onToggle: NonNullable<Props["onToggleReaction"]>;
+}) {
+	const { user } = useUser();
+	if (reactions.length === 0) return null;
+	return (
+		<div className="mt-2 flex flex-wrap gap-1">
+			{reactions.map((r) => (
+				<button
+					key={r.emoji}
+					type="button"
+					onClick={async () => {
+						if (!user) {
+							window.location.href = "/sign-in";
+							return;
+						}
+						await onToggle(commentId, r.emoji);
+					}}
+					className={cn(
+						"inline-flex h-6 items-center gap-1 rounded-full border px-1.5 text-[12px] transition-colors",
+						r.mine
+							? "border-accent/40 bg-accent/10 text-accent"
+							: "border-border bg-surface/60 text-text-secondary hover:border-border-hover hover:text-text-primary",
+					)}
+					aria-label={`${r.emoji} reaction (${r.count})`}
+				>
+					<span aria-hidden>{r.emoji}</span>
+					<span className="font-mono text-[10px] tabular-nums">{r.count}</span>
+				</button>
+			))}
+		</div>
+	);
+}
+
+function ReactionPicker({
+	commentId,
+	reactions,
+	onToggle,
+}: {
+	commentId: string;
+	reactions: ReactionAggregate[];
+	onToggle: NonNullable<Props["onToggleReaction"]>;
+}) {
+	const { user } = useUser();
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		const onDoc = (e: MouseEvent) => {
+			if (!ref.current) return;
+			if (ref.current.contains(e.target as Node)) return;
+			setOpen(false);
+		};
+		document.addEventListener("mousedown", onDoc);
+		return () => document.removeEventListener("mousedown", onDoc);
+	}, [open]);
+
+	const mineByEmoji = useMemo(() => {
+		const m = new Map<string, boolean>();
+		for (const r of reactions) m.set(r.emoji, r.mine);
+		return m;
+	}, [reactions]);
+
+	return (
+		<div ref={ref} className="relative">
+			<button
+				type="button"
+				onClick={() => {
+					if (!user) {
+						window.location.href = "/sign-in";
+						return;
+					}
+					setOpen((o) => !o);
+				}}
+				className="inline-flex items-center gap-1 font-mono text-[11px] text-text-muted transition-colors hover:text-text-primary"
+				aria-label="Add reaction"
+			>
+				<SmilePlus className="size-3.5" aria-hidden />
+				React
+			</button>
+			{open && (
+				<div className="absolute bottom-full left-0 z-20 mb-1 flex gap-0.5 rounded-button border border-border bg-card p-1 shadow-xl">
+					{ALLOWED_REACTION_EMOJIS.map((emoji) => (
+						<button
+							key={emoji}
+							type="button"
+							onClick={async () => {
+								setOpen(false);
+								await onToggle(commentId, emoji);
+							}}
+							className={cn(
+								"inline-flex size-8 items-center justify-center rounded-[4px] text-base transition-colors",
+								mineByEmoji.get(emoji)
+									? "bg-accent/15"
+									: "hover:bg-surface",
+							)}
+							aria-label={`React with ${emoji}`}
+						>
+							{emoji}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
 	);
 }
 

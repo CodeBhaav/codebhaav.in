@@ -257,6 +257,32 @@ export default defineSchema({
 		.index("by_user", ["clerkUserId"]),
 
 	/**
+	 * Reactions on idea or project comments. Flat fields (kind + id-as-
+	 * string) make compound indexing straightforward; the actual comment
+	 * the reaction belongs to is resolved by `parentKind` switching on
+	 * the right comments table. Emoji values are whitelisted against the
+	 * ALLOWED_REACTION_EMOJIS constant in convex/reactions.ts.
+	 */
+	commentReaction: defineTable({
+		parentKind: v.union(
+			v.literal("ideaComment"),
+			v.literal("projectComment"),
+		),
+		parentId: v.string(),
+		clerkUserId: v.string(),
+		userName: v.string(),
+		userUsername: v.optional(v.string()),
+		emoji: v.string(),
+	})
+		.index("by_parent", ["parentKind", "parentId"])
+		.index("by_parent_user_emoji", [
+			"parentKind",
+			"parentId",
+			"clerkUserId",
+			"emoji",
+		]),
+
+	/**
 	 * Team-lead-posted milestone entries that sit above the comment
 	 * thread on the project detail page. Once a project ships these
 	 * become the case-study timeline.
