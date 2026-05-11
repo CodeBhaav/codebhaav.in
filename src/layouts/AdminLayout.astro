@@ -2,6 +2,7 @@
 import "@/styles/global.css";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
+import { ClientRouter } from "astro:transitions";
 import AdminSidebarIsland from "@/components/react/islands/AdminSidebarIsland";
 
 // Auth gate lives in src/middleware.ts so non-admin requests never reach
@@ -27,6 +28,7 @@ const { title, active } = Astro.props;
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<meta name="robots" content="noindex,nofollow" />
 		<title>{title} · CodeBhaav Admin</title>
+		<ClientRouter />
 	</head>
 	<body class="bg-background text-text-primary antialiased">
 		<div class="flex min-h-screen">

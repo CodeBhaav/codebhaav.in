@@ -1,5 +1,6 @@
 ---
 import "@/styles/global.css";
+import { ClientRouter } from "astro:transitions";
 import NavbarIsland from "@/components/react/islands/NavbarIsland";
 import Footer from "@/components/static/Footer.astro";
 import PostHog from "@/components/posthog.astro";
@@ -113,6 +114,7 @@ const organizationSchema = {
 
 		<PostHog />
 		<GoogleAnalytics />
+		<ClientRouter />
 	</head>
 	<body class="bg-background text-text-primary min-h-screen overflow-x-hidden px-4 lg:px-0 font-sans antialiased">
 		{

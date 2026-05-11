@@ -133,18 +133,22 @@ export default defineSchema({
 		ideaId: v.id("projectIdea"),
 		clerkUserId: v.string(),
 		authorName: v.string(),
+		// Clerk username (preferred_username JWT claim). Optional because
+		// not every user sets one  fall back to first-name handle.
+		authorUsername: v.optional(v.string()),
 		body: v.string(),
 		// Threading  null/absent for top-level comments. Reply comments
 		// point at their parent. Tree depth handled in the frontend.
 		parentId: v.optional(v.id("ideaComment")),
-		// Inline @mentions: array of (clerkUserId, name-at-mention-time)
-		// snapshots. The body itself contains the `@Name` substrings; this
-		// array is the metadata for highlighting + future notifications.
+		// Inline @mentions: array of snapshots. The body itself contains
+		// the `@handle` substrings; this array is the metadata for
+		// highlighting + future notifications.
 		mentions: v.optional(
 			v.array(
 				v.object({
 					clerkUserId: v.string(),
 					name: v.string(),
+					username: v.optional(v.string()),
 				}),
 			),
 		),
@@ -195,6 +199,7 @@ export default defineSchema({
 		projectId: v.id("project"),
 		clerkUserId: v.string(),
 		authorName: v.string(),
+		authorUsername: v.optional(v.string()),
 		body: v.string(),
 		parentId: v.optional(v.id("projectComment")),
 		mentions: v.optional(
@@ -202,6 +207,7 @@ export default defineSchema({
 				v.object({
 					clerkUserId: v.string(),
 					name: v.string(),
+					username: v.optional(v.string()),
 				}),
 			),
 		),

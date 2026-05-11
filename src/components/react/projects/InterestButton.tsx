@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useClerk, useUser } from "@clerk/clerk-react";
 import { Check, HandHelping } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,12 +25,13 @@ export function InterestButton({
 	variant = "secondary",
 }: Props) {
 	const { user, isLoaded } = useUser();
+	const { openSignIn } = useClerk();
 	const [pending, setPending] = useState(false);
 
 	const handleClick = async () => {
 		if (pending || disabled) return;
 		if (isLoaded && !user) {
-			window.location.href = "/sign-in";
+			openSignIn();
 			return;
 		}
 		setPending(true);

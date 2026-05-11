@@ -18,6 +18,7 @@ interface ClerkIdentity {
 	name?: string;
 	givenName?: string;
 	familyName?: string;
+	preferredUsername?: string;
 	metadata?: { role?: string };
 }
 
@@ -38,6 +39,11 @@ async function requireAdmin(
 function readableName(id: ClerkIdentity): string {
 	const joined = [id.givenName, id.familyName].filter(Boolean).join(" ").trim();
 	return joined || id.name || id.email || "Anonymous";
+}
+
+function readableUsername(id: ClerkIdentity): string | undefined {
+	const u = id.preferredUsername?.trim();
+	return u && u.length > 0 ? u : undefined;
 }
 
 /* ─── Submission ─────────────────────────────────────────────────────── */
@@ -206,6 +212,7 @@ export const getIdea = query({
 			comments: comments.map((c) => ({
 				id: c._id,
 				authorName: c.authorName,
+				authorUsername: c.authorUsername ?? null,
 				clerkUserId: c.clerkUserId,
 				body: c.body,
 				createdAt: c._creationTime,
@@ -362,15 +369,15 @@ export const commentOnIdea = mutation({
 		// Start with explicit mentions selected via the typeahead.
 		const merged = new Map<
 			string,
-			{ clerkUserId: string; name: string }
+			{ clerkUserId: string; name: string; username?: string }
 		>();
 		for (const m of args.mentions ?? []) {
 			merged.set(m.clerkUserId, m);
 		}
 
 		// Auto-resolve any `@<token>` substrings in the body that weren't
-		// picked from the dropdown  scan a single lookup map built from
-		// every table that knows a (clerkUserId, name) pair, exclude self.
+		// picked from the dropdown. Match by lowercased username first,
+		// then first-name. Self excluded.
 		const tokens = extractMentionTokens(body);
 		if (tokens.length > 0) {
 			const lookup = await buildMemberLookup(ctx, identity.subject);
@@ -383,10 +390,12 @@ export const commentOnIdea = mutation({
 		}
 		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
+		const authorUsername = readableUsername(identity);
 		const id = await ctx.db.insert("ideaComment", {
 			ideaId: args.ideaId,
 			clerkUserId: identity.subject,
 			authorName: readableName(identity),
+			...(authorUsername ? { authorUsername } : {}),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
 			...(finalMentions.length > 0 ? { mentions: finalMentions } : {}),

@@ -12,6 +12,7 @@ interface ClerkIdentity {
 	name?: string;
 	givenName?: string;
 	familyName?: string;
+	preferredUsername?: string;
 	metadata?: { role?: string };
 }
 
@@ -32,6 +33,11 @@ async function requireAdmin(
 function readableName(id: ClerkIdentity): string {
 	const joined = [id.givenName, id.familyName].filter(Boolean).join(" ").trim();
 	return joined || id.name || id.email || "Anonymous";
+}
+
+function readableUsername(id: ClerkIdentity): string | undefined {
+	const u = id.preferredUsername?.trim();
+	return u && u.length > 0 ? u : undefined;
 }
 
 /* ─── Public reads ───────────────────────────────────────────────────── */
@@ -175,6 +181,7 @@ export const getProjectBySlug = query({
 			comments: comments.map((c) => ({
 				id: c._id,
 				authorName: c.authorName,
+				authorUsername: c.authorUsername ?? null,
 				clerkUserId: c.clerkUserId,
 				body: c.body,
 				createdAt: c._creationTime,
@@ -317,7 +324,7 @@ export const commentOnProject = mutation({
 
 		const merged = new Map<
 			string,
-			{ clerkUserId: string; name: string }
+			{ clerkUserId: string; name: string; username?: string }
 		>();
 		for (const m of args.mentions ?? []) merged.set(m.clerkUserId, m);
 
@@ -333,10 +340,12 @@ export const commentOnProject = mutation({
 		}
 		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
+		const authorUsername = readableUsername(identity);
 		const id = await ctx.db.insert("projectComment", {
 			projectId: args.projectId,
 			clerkUserId: identity.subject,
 			authorName: readableName(identity),
+			...(authorUsername ? { authorUsername } : {}),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
 			...(finalMentions.length > 0 ? { mentions: finalMentions } : {}),

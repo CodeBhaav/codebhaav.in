@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useClerk, useUser } from "@clerk/clerk-react";
 import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,7 @@ export function VoteButton({
 	disabled,
 }: Props) {
 	const { user, isLoaded } = useUser();
+	const { openSignIn } = useClerk();
 	const [pending, setPending] = useState<VoteDirection | null>(null);
 	const score = upvotes - downvotes;
 
@@ -31,7 +32,7 @@ export function VoteButton({
 		e.stopPropagation();
 		if (pending || disabled) return;
 		if (isLoaded && !user) {
-			window.location.href = "/sign-in";
+			openSignIn();
 			return;
 		}
 		setPending(direction);

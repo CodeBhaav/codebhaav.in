@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { useUser } from "@clerk/clerk-react";
+import { SignInButton, useUser } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
 import { cn } from "@/lib/utils";
 
@@ -37,9 +37,14 @@ export function IdeaSubmitForm({ onSuccess, className }: Props) {
 				)}
 			>
 				<p className="text-sm text-text-secondary">
-					<a href="/sign-in" className="text-accent hover:text-accent-hover">
-						Sign in
-					</a>{" "}
+					<SignInButton mode="modal">
+						<button
+							type="button"
+							className="text-accent hover:text-accent-hover"
+						>
+							Sign in
+						</button>
+					</SignInButton>{" "}
 					to share an idea.
 				</p>
 			</div>

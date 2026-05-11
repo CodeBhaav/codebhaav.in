@@ -13,6 +13,7 @@ const MAX_RESULTS = 8;
 export interface MemberRecord {
 	clerkUserId: string;
 	name: string;
+	username?: string;
 }
 
 /**
@@ -44,14 +45,30 @@ export async function buildMemberLookup(
 	excludeClerkUserId: string,
 ): Promise<Map<string, MemberRecord>> {
 	const lookup = new Map<string, MemberRecord>();
+	const byClerkId = new Map<string, MemberRecord>();
 
-	const add = (clerkUserId: string | undefined, name: string | undefined) => {
+	const add = (
+		clerkUserId: string | undefined,
+		name: string | undefined,
+		username?: string | undefined,
+	) => {
 		if (!clerkUserId || !name) return;
 		if (clerkUserId === excludeClerkUserId) return;
-		const firstName = (name.split(/\s+/)[0] || "").toLowerCase();
-		if (!firstName) return;
-		if (!lookup.has(firstName)) {
-			lookup.set(firstName, { clerkUserId, name });
+		// Upgrade existing record if we now have a username.
+		const existing = byClerkId.get(clerkUserId);
+		const record: MemberRecord = {
+			clerkUserId,
+			name: existing?.name ?? name,
+			username: username ?? existing?.username,
+		};
+		byClerkId.set(clerkUserId, record);
+		// Index by username (preferred) and by first-name (fallback).
+		if (record.username) {
+			lookup.set(record.username.toLowerCase(), record);
+		}
+		const firstName = (record.name.split(/\s+/)[0] || "").toLowerCase();
+		if (firstName && !lookup.has(firstName)) {
+			lookup.set(firstName, record);
 		}
 	};
 
@@ -59,10 +76,10 @@ export async function buildMemberLookup(
 		add(f.clerkUserId, f.name);
 	}
 	for (const c of await ctx.db.query("ideaComment").collect()) {
-		add(c.clerkUserId, c.authorName);
+		add(c.clerkUserId, c.authorName, c.authorUsername);
 	}
 	for (const c of await ctx.db.query("projectComment").collect()) {
-		add(c.clerkUserId, c.authorName);
+		add(c.clerkUserId, c.authorName, c.authorUsername);
 	}
 	for (const i of await ctx.db.query("projectInterest").collect()) {
 		add(i.clerkUserId, i.userName);
@@ -95,43 +112,39 @@ export const searchMembers = query({
 		const q = args.prefix.trim().toLowerCase();
 		if (q.length === 0) return [];
 
-		const seen = new Map<string, string>();
+		const seen = new Map<string, MemberRecord>();
 
-		const push = (clerkUserId: string | undefined, name: string) => {
+		const push = (
+			clerkUserId: string | undefined,
+			name: string,
+			username?: string,
+		) => {
 			if (!clerkUserId) return;
 			if (clerkUserId === me.subject) return;
-			if (seen.has(clerkUserId)) return;
 			if (!name) return;
-			if (!name.toLowerCase().includes(q)) return;
-			seen.set(clerkUserId, name);
+			const usernameMatch =
+				typeof username === "string" && username.toLowerCase().includes(q);
+			const nameMatch = name.toLowerCase().includes(q);
+			if (!usernameMatch && !nameMatch) return;
+			// Allow upgrading an earlier match if we now have a username.
+			const existing = seen.get(clerkUserId);
+			seen.set(clerkUserId, {
+				clerkUserId,
+				name: existing?.name ?? name,
+				username: username ?? existing?.username,
+			});
 		};
 
 		const founding = await ctx.db.query("foundingMember").collect();
 		for (const f of founding) push(f.clerkUserId, f.name);
-		if (seen.size >= MAX_RESULTS) {
-			return Array.from(seen.entries(), ([clerkUserId, name]) => ({
-				clerkUserId,
-				name,
-			})).slice(0, MAX_RESULTS);
-		}
 
 		const ideaComments = await ctx.db.query("ideaComment").collect();
-		for (const c of ideaComments) push(c.clerkUserId, c.authorName);
-		if (seen.size >= MAX_RESULTS) {
-			return Array.from(seen.entries(), ([clerkUserId, name]) => ({
-				clerkUserId,
-				name,
-			})).slice(0, MAX_RESULTS);
-		}
+		for (const c of ideaComments)
+			push(c.clerkUserId, c.authorName, c.authorUsername);
 
 		const projectComments = await ctx.db.query("projectComment").collect();
-		for (const c of projectComments) push(c.clerkUserId, c.authorName);
-		if (seen.size >= MAX_RESULTS) {
-			return Array.from(seen.entries(), ([clerkUserId, name]) => ({
-				clerkUserId,
-				name,
-			})).slice(0, MAX_RESULTS);
-		}
+		for (const c of projectComments)
+			push(c.clerkUserId, c.authorName, c.authorUsername);
 
 		const interests = await ctx.db.query("projectInterest").collect();
 		for (const i of interests) push(i.clerkUserId, i.userName);
@@ -139,9 +152,6 @@ export const searchMembers = query({
 		const teamMembers = await ctx.db.query("projectBuildTeamMember").collect();
 		for (const m of teamMembers) push(m.clerkUserId, m.userName);
 
-		return Array.from(seen.entries(), ([clerkUserId, name]) => ({
-			clerkUserId,
-			name,
-		})).slice(0, MAX_RESULTS);
+		return Array.from(seen.values()).slice(0, MAX_RESULTS);
 	},
 });

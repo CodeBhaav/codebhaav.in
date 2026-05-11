@@ -1,13 +1,24 @@
 import { useMemo, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
-import { CornerDownRight, Trash2 } from "lucide-react";
+import { SignInButton, useUser } from "@clerk/clerk-react";
+import {
+	ChevronDown,
+	ChevronRight,
+	CornerDownRight,
+	Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, formatRelative } from "../admin/AdminOverview";
-import { MentionComposer, type Mention, RenderedBody } from "./MentionComposer";
+import {
+	MentionComposer,
+	type Mention,
+	RenderedBody,
+	mentionHandle,
+} from "./MentionComposer";
 
 export interface CommentItem {
 	id: string;
 	authorName: string;
+	authorUsername?: string | null;
 	clerkUserId: string;
 	body: string;
 	createdAt: number;
@@ -36,6 +47,18 @@ interface TreeNode {
 }
 
 const MAX_VISUAL_DEPTH = 5;
+
+function escapeRegExp(s: string): string {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function countDescendants(node: TreeNode): number {
+	let n = 0;
+	for (const child of node.children) {
+		n += 1 + countDescendants(child);
+	}
+	return n;
+}
 
 function buildTree(comments: CommentItem[]): TreeNode[] {
 	const byId = new Map<string, TreeNode>();
@@ -72,6 +95,20 @@ export function CommentThread({
 	const [error, setError] = useState<string | null>(null);
 
 	const tree = useMemo(() => buildTree(comments), [comments]);
+	// id -> { authorName, authorUsername } for "Replying to @X" line.
+	const parentMeta = useMemo(() => {
+		const map = new Map<
+			string,
+			{ name: string; username?: string }
+		>();
+		for (const c of comments) {
+			map.set(c.id, {
+				name: c.authorName,
+				username: c.authorUsername ?? undefined,
+			});
+		}
+		return map;
+	}, [comments]);
 
 	const handlePost = async () => {
 		const body = draft.trim();
@@ -79,10 +116,10 @@ export function CommentThread({
 		setPosting(true);
 		setError(null);
 		try {
-			// Only keep mentions whose first-name still appears in the body.
+			// Only keep mentions whose handle still appears in the body.
 			const stillMentioned = draftMentions.filter((m) => {
-				const first = m.name.split(/\s+/)[0];
-				return new RegExp(`@${first}\\b`).test(body);
+				const handle = mentionHandle(m);
+				return new RegExp(`@${escapeRegExp(handle)}\\b`, "i").test(body);
 			});
 			await onPost({ body, mentions: stillMentioned });
 			setDraft("");
@@ -109,9 +146,14 @@ export function CommentThread({
 			{isLoaded && !user ? (
 				<div className="rounded-card border border-dashed border-border bg-background/40 px-4 py-5 text-center">
 					<p className="text-sm text-text-secondary">
-						<a href="/sign-in" className="text-accent hover:text-accent-hover">
-							Sign in
-						</a>{" "}
+						<SignInButton mode="modal">
+							<button
+								type="button"
+								className="text-accent hover:text-accent-hover"
+							>
+								Sign in
+							</button>
+						</SignInButton>{" "}
 						to join the discussion.
 					</p>
 				</div>
@@ -146,6 +188,7 @@ export function CommentThread({
 							key={node.comment.id}
 							node={node}
 							depth={0}
+							parentMeta={parentMeta}
 							onPost={onPost}
 							onDelete={onDelete}
 						/>
@@ -159,11 +202,13 @@ export function CommentThread({
 function CommentNode({
 	node,
 	depth,
+	parentMeta,
 	onPost,
 	onDelete,
 }: {
 	node: TreeNode;
 	depth: number;
+	parentMeta: Map<string, { name: string; username?: string }>;
 	onPost: Props["onPost"];
 	onDelete: Props["onDelete"];
 }) {
@@ -174,9 +219,14 @@ function CommentNode({
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [deleting, setDeleting] = useState(false);
+	const [collapsed, setCollapsed] = useState(false);
 
 	const { comment } = node;
 	const visualDepth = Math.min(depth, MAX_VISUAL_DEPTH);
+	const parent =
+		comment.parentId ? parentMeta.get(comment.parentId) : null;
+	const childCount = node.children.length;
+	const descendantCount = useMemo(() => countDescendants(node), [node]);
 
 	const startReply = () => {
 		if (!user) {
@@ -189,11 +239,18 @@ function CommentNode({
 			setReplyDraft("");
 			setReplyMentions([]);
 		} else {
-			const first = comment.authorName.split(/\s+/)[0] || comment.authorName;
-			const prefill = `@${first} `;
+			const handle = mentionHandle({
+				name: comment.authorName,
+				username: comment.authorUsername ?? undefined,
+			});
+			const prefill = `@${handle} `;
 			setReplyDraft(prefill);
 			setReplyMentions([
-				{ clerkUserId: comment.clerkUserId, name: first },
+				{
+					clerkUserId: comment.clerkUserId,
+					name: comment.authorName,
+					username: comment.authorUsername ?? undefined,
+				},
 			]);
 		}
 		setReplying(true);
@@ -213,8 +270,8 @@ function CommentNode({
 		setError(null);
 		try {
 			const stillMentioned = replyMentions.filter((m) => {
-				const first = m.name.split(/\s+/)[0];
-				return new RegExp(`@${first}\\b`).test(body);
+				const handle = mentionHandle(m);
+				return new RegExp(`@${escapeRegExp(handle)}\\b`, "i").test(body);
 			});
 			await onPost({
 				body,
@@ -241,6 +298,10 @@ function CommentNode({
 		}
 	};
 
+	const parentHandle = parent
+		? mentionHandle({ name: parent.name, username: parent.username })
+		: null;
+
 	return (
 		<li>
 			<div
@@ -249,6 +310,14 @@ function CommentNode({
 					depth > 0 && "bg-card/60",
 				)}
 			>
+				{/* "Replying to @X" breadcrumb so distant replies still feel attached */}
+				{parent && parentHandle && (
+					<p className="mb-1.5 flex items-center gap-1 font-mono text-[10px] text-text-muted">
+						<CornerDownRight className="size-3" aria-hidden />
+						<span>replying to</span>
+						<span className="text-accent">@{parentHandle}</span>
+					</p>
+				)}
 				<div className="flex items-start gap-3">
 					<Avatar name={comment.authorName} size={28} />
 					<div className="min-w-0 flex-1">
@@ -256,6 +325,11 @@ function CommentNode({
 							<p className="text-sm font-medium text-text-primary">
 								{comment.authorName}
 							</p>
+							{comment.authorUsername && (
+								<span className="font-mono text-[11px] text-text-muted">
+									@{comment.authorUsername}
+								</span>
+							)}
 							<span className="font-mono text-[10px] text-text-muted">
 								{formatRelative(comment.createdAt)}
 							</span>
@@ -280,6 +354,26 @@ function CommentNode({
 							>
 								Reply
 							</button>
+							{childCount > 0 && (
+								<button
+									type="button"
+									onClick={() => setCollapsed((c) => !c)}
+									className="inline-flex items-center gap-1 font-mono text-[11px] text-text-muted transition-colors hover:text-text-primary"
+								>
+									{collapsed ? (
+										<>
+											<ChevronRight className="size-3" aria-hidden />
+											Show {descendantCount}{" "}
+											{descendantCount === 1 ? "reply" : "replies"}
+										</>
+									) : (
+										<>
+											<ChevronDown className="size-3" aria-hidden />
+											Hide replies
+										</>
+									)}
+								</button>
+							)}
 							{comment.mine && (
 								<button
 									type="button"
@@ -319,7 +413,7 @@ function CommentNode({
 				)}
 			</div>
 
-			{node.children.length > 0 && (
+			{node.children.length > 0 && !collapsed && (
 				<ul
 					className={cn(
 						"mt-2 space-y-2 border-l border-border",
@@ -331,6 +425,7 @@ function CommentNode({
 							key={child.comment.id}
 							node={child}
 							depth={depth + 1}
+							parentMeta={parentMeta}
 							onPost={onPost}
 							onDelete={onDelete}
 						/>

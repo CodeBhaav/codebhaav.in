@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { useUser } from "@clerk/clerk-react";
+import { SignInButton, useUser } from "@clerk/clerk-react";
 import { MessageSquare, Plus } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -45,12 +45,14 @@ export function IdeasListPanel() {
 							{composerOpen ? "Close" : "Share an idea"}
 						</button>
 					) : (
-						<a
-							href="/sign-in"
-							className="inline-flex h-9 items-center rounded-button border border-border bg-card px-3.5 text-xs font-medium text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
-						>
-							Sign in to share
-						</a>
+						<SignInButton mode="modal">
+							<button
+								type="button"
+								className="inline-flex h-9 items-center rounded-button border border-border bg-card px-3.5 text-xs font-medium text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+							>
+								Sign in to share
+							</button>
+						</SignInButton>
 					))}
 			</header>
 

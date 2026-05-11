@@ -14,6 +14,18 @@ import { cn } from "@/lib/utils";
 export interface Mention {
 	clerkUserId: string;
 	name: string;
+	username?: string;
+}
+
+/**
+ * The handle inserted into the body for an @-mention. We prefer the
+ * Clerk username (unique, stable); fall back to a lowercased first-name
+ * (works for our small community where most first names are unique).
+ */
+export function mentionHandle(m: { name: string; username?: string }): string {
+	if (m.username && m.username.trim()) return m.username.trim();
+	const first = m.name.split(/\s+/)[0] || m.name;
+	return first.toLowerCase();
 }
 
 interface Props {
@@ -105,21 +117,19 @@ export function MentionComposer({
 	const selectCandidate = (m: Mention) => {
 		const ta = textareaRef.current;
 		if (!ta) return;
-		// Replace the partial `@query` with `@FirstName ` (single word, no spaces).
-		const first = m.name.split(/\s+/)[0] || m.name;
+		const handle = mentionHandle(m);
 		const before = value.slice(0, state.start);
 		const after = value.slice(state.start + 1 + state.query.length);
-		const inserted = `@${first} `;
+		const inserted = `@${handle} `;
 		const next = before + inserted + after;
 		// Dedupe + merge mentions: if same clerkUserId already present, keep one.
 		const updatedMentions = mentions.some(
 			(x) => x.clerkUserId === m.clerkUserId,
 		)
 			? mentions
-			: [...mentions, { clerkUserId: m.clerkUserId, name: first }];
+			: [...mentions, { clerkUserId: m.clerkUserId, name: m.name, username: m.username }];
 		onChange(next, updatedMentions);
 		setState({ ...INITIAL });
-		// Restore caret to after the insertion.
 		requestAnimationFrame(() => {
 			const caret = state.start + inserted.length;
 			ta.focus();
@@ -204,7 +214,7 @@ export function MentionComposer({
 						>
 							<span className="font-medium">{m.name}</span>
 							<span className="ml-auto font-mono text-[10px] text-text-muted">
-								@{m.name.split(/\s+/)[0]}
+								@{mentionHandle(m)}
 							</span>
 						</li>
 					))}
@@ -232,22 +242,30 @@ export function RenderedBody({
 	body: string;
 	mentions: Mention[];
 }) {
-	const firstNames = useMemo(() => {
+	// Build a set of all possible handles  preferred username if available,
+	// plus the first-name fallback (case-insensitive). Older comments may
+	// have been written with first-name handles before usernames existed,
+	// so we still need to highlight those.
+	const handles = useMemo(() => {
 		const set = new Set<string>();
 		for (const m of mentions) {
-			const first = m.name.split(/\s+/)[0];
+			if (m.username) set.add(m.username.toLowerCase());
+			const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
 			if (first) set.add(first);
+			// Also catch capitalized first-name (back-compat with old @Pranav style)
+			const firstCap = m.name.split(/\s+/)[0];
+			if (firstCap) set.add(firstCap);
 		}
 		return set;
 	}, [mentions]);
 
 	const tokens = useMemo(() => {
-		if (firstNames.size === 0) return [{ type: "text", value: body }];
+		if (handles.size === 0) return [{ type: "text", value: body }];
 		const pattern = new RegExp(
-			`@(${Array.from(firstNames)
+			`@(${Array.from(handles)
 				.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
 				.join("|")})\\b`,
-			"g",
+			"gi",
 		);
 		const out: Array<{ type: "text" | "mention"; value: string }> = [];
 		let last = 0;
@@ -263,7 +281,7 @@ export function RenderedBody({
 			out.push({ type: "text", value: body.slice(last) });
 		}
 		return out;
-	}, [body, firstNames]);
+	}, [body, handles]);
 
 	return (
 		<p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
