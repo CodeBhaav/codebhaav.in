@@ -6,6 +6,7 @@ import { formatRelative } from "../admin/AdminOverview";
 import { BuildTeamCard } from "./BuildTeamCard";
 import { CommentThread } from "./CommentThread";
 import { InterestButton } from "./InterestButton";
+import { ProjectLinksCard } from "./ProjectLinksCard";
 import { StatusPill } from "./ProjectsListPanel";
 import { TechStackCard } from "./TechStackCard";
 
@@ -125,8 +126,14 @@ export function ProjectDetailPanel({ slug }: Props) {
 					</section>
 				</div>
 
-				{/* Sidebar: tech stack + team + status info */}
+				{/* Sidebar: links + tech stack + team + status info */}
 				<aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+					<ProjectLinksCard
+						projectId={project.id}
+						repoUrl={project.repoUrl}
+						demoUrl={project.demoUrl}
+						canEdit={canManage}
+					/>
 					<TechStackCard
 						projectId={project.id}
 						techStack={project.techStack}

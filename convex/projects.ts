@@ -240,6 +240,8 @@ export const getProjectBySlug = query({
 			originatorName: project.originatorName ?? null,
 			originatingIdeaId: project.originatingIdeaId ?? null,
 			teamLeadClerkUserId: project.teamLeadClerkUserId ?? null,
+			repoUrl: project.repoUrl ?? null,
+			demoUrl: project.demoUrl ?? null,
 			createdAt: project._creationTime,
 			buildStartedAt: project.buildStartedAt ?? null,
 			shippedAt: project.shippedAt ?? null,
@@ -594,12 +596,23 @@ export const getProjectForAdmin = query({
 	},
 });
 
+function normalizeProjectLink(raw: string, label: string): string | undefined {
+	const trimmed = raw.trim();
+	if (!trimmed) return undefined;
+	if (!/^https:\/\/[^\s]+$/i.test(trimmed)) {
+		throw new Error(`${label} must start with https:// and have no spaces`);
+	}
+	return trimmed;
+}
+
 export const updateProject = mutation({
 	args: {
 		projectId: v.id("project"),
 		title: v.optional(v.string()),
 		description: v.optional(v.string()),
 		techStack: v.optional(v.array(v.string())),
+		repoUrl: v.optional(v.string()),
+		demoUrl: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		await requireProjectManager(ctx, args.projectId);
@@ -619,6 +632,12 @@ export const updateProject = mutation({
 				.map((t) => t.trim())
 				.filter(Boolean)
 				.slice(0, 12);
+		}
+		if (args.repoUrl !== undefined) {
+			patch.repoUrl = normalizeProjectLink(args.repoUrl, "Repo URL");
+		}
+		if (args.demoUrl !== undefined) {
+			patch.demoUrl = normalizeProjectLink(args.demoUrl, "Demo URL");
 		}
 		await ctx.db.patch(args.projectId, patch);
 		return { ok: true };

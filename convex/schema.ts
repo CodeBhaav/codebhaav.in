@@ -180,6 +180,11 @@ export default defineSchema({
 		// a global admin. Promotion of ideas + assigning the team lead
 		// itself stay admin-only.
 		teamLeadClerkUserId: v.optional(v.string()),
+		// Public-facing links surfaced in the project sidebar. Both must be
+		// `https://`  validated server-side in updateProject. Empty strings
+		// passed in from the client are normalized to absent.
+		repoUrl: v.optional(v.string()),
+		demoUrl: v.optional(v.string()),
 	})
 		.index("by_slug", ["slug"])
 		.index("by_status", ["status"])
