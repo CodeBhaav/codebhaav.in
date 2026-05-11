@@ -164,7 +164,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 5. Project update log (milestones) ⬜
+### 5. Project update log (milestones) ✅
 
 **Scope:** team-lead-only "post a build update" entries pinned above the comment thread. Visual: timeline cards with date, title, body. Once shipped, these become the case-study.
 
@@ -185,6 +185,13 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - Style: distinguished from comments — left accent bar, date prominently shown, no nesting.
 
 **Anti-spam:** cap at 1 update per hour per project per author (server-side rate check).
+
+### Notes / decisions
+- `postProjectUpdate` notifies build team + interested volunteers + originator via the existing `project_status_changed` kind with `status: "update"` discriminator in payload. NotificationFormat + email digest both special-case this pseudo-status.
+- Delete authorized for: author, project team-lead, global admin. Lead can clean up departing members' updates.
+- Visual: left accent bar on each card distinguishes updates from comments. No threading; sorted newest-first.
+- `listProjectUpdates` is a separate query (not bundled into `getProjectBySlug`) so the project page only loads them when this section is rendered. Real-time via Convex reactivity.
+- Section is hidden when there are no updates AND the visitor can't post — keeps the project page tight on early projects.
 
 ---
 

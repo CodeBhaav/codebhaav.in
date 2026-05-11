@@ -961,3 +961,137 @@ export const removeBuildTeamMember = mutation({
 		return { ok: true };
 	},
 });
+
+/* ─── Project update log (milestones) ──────────────────────────────────── */
+
+const UPDATE_TITLE_MAX = 120;
+const UPDATE_BODY_MAX = 4000;
+const UPDATE_THROTTLE_MS = 60 * 60 * 1000; // 1 update / hour / project / author
+
+export const listProjectUpdates = query({
+	args: { projectId: v.id("project") },
+	handler: async (ctx, args) => {
+		const rows = await ctx.db
+			.query("projectUpdate")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		rows.sort((a, b) => b._creationTime - a._creationTime);
+		const identity = await ctx.auth.getUserIdentity();
+		return rows.map((r) => ({
+			id: r._id,
+			projectId: r.projectId,
+			authorClerkUserId: r.authorClerkUserId,
+			authorName: r.authorName,
+			authorUsername: r.authorUsername ?? null,
+			title: r.title,
+			body: r.body,
+			createdAt: r._creationTime,
+			mine: identity?.subject === r.authorClerkUserId,
+		}));
+	},
+});
+
+export const postProjectUpdate = mutation({
+	args: {
+		projectId: v.id("project"),
+		title: v.string(),
+		body: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const { project, perms } = await requireProjectManager(
+			ctx,
+			args.projectId,
+		);
+		const actor = perms.identity;
+		await captureIdentity(ctx, actor);
+
+		const title = args.title.trim();
+		const body = args.body.trim();
+		if (!title) throw new Error("Update title cannot be empty");
+		if (title.length > UPDATE_TITLE_MAX) {
+			throw new Error(`Title must be under ${UPDATE_TITLE_MAX} characters`);
+		}
+		if (!body) throw new Error("Update body cannot be empty");
+		if (body.length > UPDATE_BODY_MAX) {
+			throw new Error(`Body must be under ${UPDATE_BODY_MAX} characters`);
+		}
+
+		// Anti-spam: one update / hour / project / author.
+		const recent = await ctx.db
+			.query("projectUpdate")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		const cutoff = Date.now() - UPDATE_THROTTLE_MS;
+		const recentMine = recent.find(
+			(r) => r.authorClerkUserId === actor.subject && r._creationTime >= cutoff,
+		);
+		if (recentMine) {
+			throw new Error(
+				"You've already posted an update for this project in the last hour. Give it a beat.",
+			);
+		}
+
+		const authorUsername = readableUsername(actor);
+		const id = await ctx.db.insert("projectUpdate", {
+			projectId: args.projectId,
+			authorClerkUserId: actor.subject,
+			authorName: readableName(actor),
+			...(authorUsername ? { authorUsername } : {}),
+			title,
+			body,
+		});
+
+		// Notify everyone on the team or volunteering. Self-mute inside.
+		const teamRows = await ctx.db
+			.query("projectBuildTeamMember")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		const interestRows = await ctx.db
+			.query("projectInterest")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		const recipients = new Set<string>();
+		for (const r of teamRows) recipients.add(r.clerkUserId);
+		for (const r of interestRows) recipients.add(r.clerkUserId);
+		if (project.originatorClerkUserId) {
+			recipients.add(project.originatorClerkUserId);
+		}
+		for (const recipient of recipients) {
+			await enqueueNotification(ctx, {
+				recipientClerkUserId: recipient,
+				actorClerkUserId: actor.subject,
+				kind: "project_status_changed",
+				payload: {
+					projectTitle: project.title,
+					slug: project.slug,
+					status: "update",
+					targetUrl: `/projects/${project.slug}`,
+					actorName: readableName(actor),
+					snippet: title,
+				},
+			});
+		}
+
+		return { id };
+	},
+});
+
+export const deleteProjectUpdate = mutation({
+	args: { updateId: v.id("projectUpdate") },
+	handler: async (ctx, args) => {
+		const identity = await requireUser(ctx);
+		const row = await ctx.db.get(args.updateId);
+		if (!row) throw new Error("Update not found");
+		const isOwner = row.authorClerkUserId === identity.subject;
+		const isAdmin =
+			(identity as unknown as ClerkIdentity).metadata?.role === "admin";
+		// Allow team-lead-of-the-same-project to clean up too.
+		const project = await ctx.db.get(row.projectId);
+		const isLead = project?.teamLeadClerkUserId === identity.subject;
+		if (!isOwner && !isAdmin && !isLead) {
+			throw new Error("Not authorized to delete this update");
+		}
+		await ctx.db.delete(args.updateId);
+		return { ok: true };
+	},
+});

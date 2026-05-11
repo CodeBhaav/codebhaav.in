@@ -257,6 +257,20 @@ export default defineSchema({
 		.index("by_user", ["clerkUserId"]),
 
 	/**
+	 * Team-lead-posted milestone entries that sit above the comment
+	 * thread on the project detail page. Once a project ships these
+	 * become the case-study timeline.
+	 */
+	projectUpdate: defineTable({
+		projectId: v.id("project"),
+		authorClerkUserId: v.string(),
+		authorName: v.string(),
+		authorUsername: v.optional(v.string()),
+		title: v.string(),
+		body: v.string(),
+	}).index("by_project", ["projectId"]),
+
+	/**
 	 * In-app inbox row  one per (recipient, event). Written inline by
 	 * every mutation that creates a relevant event so the recipient sees
 	 * it on their next query. `payload` is event-specific (typed by `kind`)

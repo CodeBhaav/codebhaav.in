@@ -46,6 +46,10 @@ export function notificationHeadline(n: NotificationRow): string {
 			if (status === "building") return `"${title}" is now building`;
 			if (status === "shipped") return `"${title}" has shipped`;
 			if (status === "open") return `"${title}" is open again`;
+			if (status === "update") {
+				const actor = asString(p.actorName, "Team lead");
+				return `${actor} posted a build update on "${title}"`;
+			}
 			return `"${title}" status changed`;
 		}
 		case "added_to_build_team": {
@@ -82,6 +86,7 @@ export function notificationSubtitle(n: NotificationRow): string {
 			const status = asString(p.status);
 			if (status === "shipped") return "Time to celebrate.";
 			if (status === "building") return "The team is assembled and starting.";
+			if (status === "update") return asString(p.snippet, "New update posted.");
 			return "Stage changed.";
 		}
 		case "added_to_build_team": {

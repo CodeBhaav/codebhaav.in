@@ -562,6 +562,13 @@ function digestItemFor(n: {
 			const status = typeof p.status === "string" ? p.status : "updated";
 			const title =
 				typeof p.projectTitle === "string" ? p.projectTitle : "A project";
+			if (status === "update") {
+				return {
+					title: `New build update on "${title}"`,
+					body: typeof p.snippet === "string" ? p.snippet : "Open to read.",
+					targetUrl: url,
+				};
+			}
 			return {
 				title: `"${title}" → ${status}`,
 				body:
