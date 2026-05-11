@@ -1102,3 +1102,118 @@ export const deleteProjectUpdate = mutation({
 		return { ok: true };
 	},
 });
+
+/* ─── Screenshots ──────────────────────────────────────────────────────── */
+
+const MAX_SCREENSHOTS_PER_PROJECT = 6;
+
+export const getScreenshotUploadUrl = mutation({
+	args: { projectId: v.id("project") },
+	handler: async (ctx, args) => {
+		await requireProjectManager(ctx, args.projectId);
+		return await ctx.storage.generateUploadUrl();
+	},
+});
+
+export const listProjectScreenshots = query({
+	args: { projectId: v.id("project") },
+	handler: async (ctx, args) => {
+		const rows = await ctx.db
+			.query("projectScreenshot")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		rows.sort((a, b) => a.order - b.order || a._creationTime - b._creationTime);
+		return await Promise.all(
+			rows.map(async (r) => ({
+				id: r._id,
+				url: await ctx.storage.getUrl(r.storageId),
+				alt: r.alt ?? null,
+				order: r.order,
+				uploadedAt: r._creationTime,
+			})),
+		);
+	},
+});
+
+export const addProjectScreenshot = mutation({
+	args: {
+		projectId: v.id("project"),
+		storageId: v.id("_storage"),
+		alt: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		await requireProjectManager(ctx, args.projectId);
+
+		const existing = await ctx.db
+			.query("projectScreenshot")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		if (existing.length >= MAX_SCREENSHOTS_PER_PROJECT) {
+			// Clean up the orphaned upload before refusing  Convex File
+			// Storage uploads stay around forever otherwise.
+			await ctx.storage.delete(args.storageId);
+			throw new Error(
+				`A project can have at most ${MAX_SCREENSHOTS_PER_PROJECT} screenshots`,
+			);
+		}
+
+		const nextOrder = existing.length
+			? Math.max(...existing.map((s) => s.order)) + 1
+			: 0;
+
+		const identity = await ctx.auth.getUserIdentity();
+		const alt = args.alt?.trim() || undefined;
+		const id = await ctx.db.insert("projectScreenshot", {
+			projectId: args.projectId,
+			storageId: args.storageId,
+			...(alt ? { alt } : {}),
+			order: nextOrder,
+			uploadedByClerkUserId: identity?.subject ?? "",
+		});
+		return { id };
+	},
+});
+
+export const removeProjectScreenshot = mutation({
+	args: { screenshotId: v.id("projectScreenshot") },
+	handler: async (ctx, args) => {
+		const row = await ctx.db.get(args.screenshotId);
+		if (!row) throw new Error("Screenshot not found");
+		await requireProjectManager(ctx, row.projectId);
+		// Delete the blob first  if Convex restart hits between the two,
+		// the orphan-with-row state is recoverable, but the row-without-
+		// blob state would show as 404 in the UI.
+		try {
+			await ctx.storage.delete(row.storageId);
+		} catch {
+			// Storage object already gone or never resolved  proceed anyway.
+		}
+		await ctx.db.delete(args.screenshotId);
+		return { ok: true };
+	},
+});
+
+export const reorderProjectScreenshots = mutation({
+	args: {
+		projectId: v.id("project"),
+		ids: v.array(v.id("projectScreenshot")),
+	},
+	handler: async (ctx, args) => {
+		await requireProjectManager(ctx, args.projectId);
+		const existing = await ctx.db
+			.query("projectScreenshot")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+		const byId = new Map(existing.map((r) => [r._id, r]));
+		// Validate: every id in the input must belong to this project.
+		for (const id of args.ids) {
+			if (!byId.has(id)) {
+				throw new Error("Unknown screenshot in reorder request");
+			}
+		}
+		for (let i = 0; i < args.ids.length; i++) {
+			await ctx.db.patch(args.ids[i], { order: i });
+		}
+		return { ok: true };
+	},
+});

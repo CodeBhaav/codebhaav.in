@@ -8,6 +8,7 @@ import { CategoriesCard } from "./CategoriesCard";
 import { CommentThread } from "./CommentThread";
 import { InterestButton } from "./InterestButton";
 import { ProjectLinksCard } from "./ProjectLinksCard";
+import { ProjectScreenshotsCard } from "./ProjectScreenshotsCard";
 import { ProjectUpdatesTimeline } from "./ProjectUpdatesTimeline";
 import { StatusPill } from "./ProjectsListPanel";
 import { TechStackCard } from "./TechStackCard";
@@ -102,6 +103,11 @@ export function ProjectDetailPanel({ slug }: Props) {
 							{project.description}
 						</p>
 					</section>
+
+					<ProjectScreenshotsCard
+						projectId={project.id}
+						canManage={canManage}
+					/>
 
 					<ProjectUpdatesTimeline
 						projectId={project.id}

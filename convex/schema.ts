@@ -257,6 +257,19 @@ export default defineSchema({
 		.index("by_user", ["clerkUserId"]),
 
 	/**
+	 * Screenshots attached to a project. Stored in Convex File Storage;
+	 * `storageId` is resolved to a URL on read. Order is explicit so
+	 * managers can rearrange.
+	 */
+	projectScreenshot: defineTable({
+		projectId: v.id("project"),
+		storageId: v.id("_storage"),
+		alt: v.optional(v.string()),
+		order: v.number(),
+		uploadedByClerkUserId: v.string(),
+	}).index("by_project", ["projectId"]),
+
+	/**
 	 * Reactions on idea or project comments. Flat fields (kind + id-as-
 	 * string) make compound indexing straightforward; the actual comment
 	 * the reaction belongs to is resolved by `parentKind` switching on

@@ -242,7 +242,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 8. Project screenshots gallery ⬜
+### 8. Project screenshots gallery ✅
 
 **Scope:** 1–6 image uploads per project. Visible on detail page. Editable by team lead / admin.
 
@@ -260,6 +260,13 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - Upload helper: `getUploadUrl` action (Convex pattern).
 - Frontend: new `ProjectScreenshotsCard.tsx` in the sidebar (or below the description in main column when screenshots > 0). Lightbox on click.
 - Validation: max 6 images, max 5MB each, JPEG/PNG/WebP only.
+
+### Notes / decisions
+- Validation lives both client-side (mime + size pre-flight before requesting an upload URL) and server-side (mutation re-counts existing screenshots before insert; orphan upload is deleted if the cap is hit). Belt-and-suspenders since upload URLs are short-lived but tampering with the count field is still possible.
+- `removeProjectScreenshot` deletes the blob first, then the row. If a crash lands in between, we're left with a row pointing at a missing blob, which renders as a placeholder icon and is easy to clean up via the admin Convex dashboard. The other ordering would leak storage.
+- Skipped drag-to-reorder for v1  `reorderProjectScreenshots` mutation exists so the UI can add it later. Default order is insertion order via the existing `order: number` field.
+- Lightbox closes on ESC / backdrop click; ←/→ keys navigate. Locks body scroll while open.
+- Card is hidden for non-managers when there are zero screenshots (avoids an empty "Screenshots" section on early projects). For managers it shows the upload CTA.
 
 ---
 
