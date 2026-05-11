@@ -183,12 +183,19 @@ function CommentNode({
 			window.location.href = "/sign-in";
 			return;
 		}
-		const first = comment.authorName.split(/\s+/)[0] || comment.authorName;
-		const prefill = `@${first} `;
-		setReplyDraft(prefill);
-		setReplyMentions([
-			{ clerkUserId: comment.clerkUserId, name: first },
-		]);
+		// Don't prefill an @mention when you're replying to yourself  it's
+		// noise. Just open the composer empty so you can think out loud.
+		if (comment.mine) {
+			setReplyDraft("");
+			setReplyMentions([]);
+		} else {
+			const first = comment.authorName.split(/\s+/)[0] || comment.authorName;
+			const prefill = `@${first} `;
+			setReplyDraft(prefill);
+			setReplyMentions([
+				{ clerkUserId: comment.clerkUserId, name: first },
+			]);
+		}
 		setReplying(true);
 	};
 

@@ -151,7 +151,15 @@ export function MentionComposer({
 	};
 
 	useEffect(() => {
-		if (autoFocus) textareaRef.current?.focus();
+		if (!autoFocus) return;
+		const ta = textareaRef.current;
+		if (!ta) return;
+		ta.focus();
+		// Place the cursor at the end of any prefilled content (e.g. after
+		// "@Pranav ") instead of position 0, which is what `focus()` alone
+		// would give us.
+		const end = ta.value.length;
+		ta.setSelectionRange(end, end);
 	}, [autoFocus]);
 
 	return (
