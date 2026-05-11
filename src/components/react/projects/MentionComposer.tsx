@@ -152,14 +152,19 @@ export function MentionComposer({
 
 	useEffect(() => {
 		if (!autoFocus) return;
-		const ta = textareaRef.current;
-		if (!ta) return;
-		ta.focus();
-		// Place the cursor at the end of any prefilled content (e.g. after
-		// "@Pranav ") instead of position 0, which is what `focus()` alone
-		// would give us.
-		const end = ta.value.length;
-		ta.setSelectionRange(end, end);
+		// Fire on this tick AND on the next animation frame  some browser /
+		// React commit timings leave the DOM value un-updated when we first
+		// read it, which dropped the cursor at index 0.
+		const place = () => {
+			const ta = textareaRef.current;
+			if (!ta) return;
+			ta.focus();
+			const end = ta.value.length;
+			ta.setSelectionRange(end, end);
+		};
+		place();
+		const id = requestAnimationFrame(place);
+		return () => cancelAnimationFrame(id);
 	}, [autoFocus]);
 
 	return (

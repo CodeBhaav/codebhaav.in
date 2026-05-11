@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { buildMemberLookup, extractMentionTokens } from "./members";
 
 const MAX_COMMENT_LEN = 2000;
 
@@ -314,11 +315,23 @@ export const commentOnProject = mutation({
 			}
 		}
 
-		const dedupedMentions = args.mentions
-			? Array.from(
-					new Map(args.mentions.map((m) => [m.clerkUserId, m])).values(),
-				).slice(0, 20)
-			: undefined;
+		const merged = new Map<
+			string,
+			{ clerkUserId: string; name: string }
+		>();
+		for (const m of args.mentions ?? []) merged.set(m.clerkUserId, m);
+
+		const tokens = extractMentionTokens(body);
+		if (tokens.length > 0) {
+			const lookup = await buildMemberLookup(ctx, identity.subject);
+			for (const token of tokens) {
+				const hit = lookup.get(token.toLowerCase());
+				if (hit && !merged.has(hit.clerkUserId)) {
+					merged.set(hit.clerkUserId, hit);
+				}
+			}
+		}
+		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
 		const id = await ctx.db.insert("projectComment", {
 			projectId: args.projectId,
@@ -326,9 +339,7 @@ export const commentOnProject = mutation({
 			authorName: readableName(identity),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
-			...(dedupedMentions && dedupedMentions.length > 0
-				? { mentions: dedupedMentions }
-				: {}),
+			...(finalMentions.length > 0 ? { mentions: finalMentions } : {}),
 		});
 		await ctx.db.patch(args.projectId, {
 			commentCount: project.commentCount + 1,

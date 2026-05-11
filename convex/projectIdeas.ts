@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { buildMemberLookup, extractMentionTokens } from "./members";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IDEAS_PER_DAY = 5;
@@ -358,11 +359,29 @@ export const commentOnIdea = mutation({
 			}
 		}
 
-		const dedupedMentions = args.mentions
-			? Array.from(
-					new Map(args.mentions.map((m) => [m.clerkUserId, m])).values(),
-				).slice(0, 20)
-			: undefined;
+		// Start with explicit mentions selected via the typeahead.
+		const merged = new Map<
+			string,
+			{ clerkUserId: string; name: string }
+		>();
+		for (const m of args.mentions ?? []) {
+			merged.set(m.clerkUserId, m);
+		}
+
+		// Auto-resolve any `@<token>` substrings in the body that weren't
+		// picked from the dropdown  scan a single lookup map built from
+		// every table that knows a (clerkUserId, name) pair, exclude self.
+		const tokens = extractMentionTokens(body);
+		if (tokens.length > 0) {
+			const lookup = await buildMemberLookup(ctx, identity.subject);
+			for (const token of tokens) {
+				const hit = lookup.get(token.toLowerCase());
+				if (hit && !merged.has(hit.clerkUserId)) {
+					merged.set(hit.clerkUserId, hit);
+				}
+			}
+		}
+		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
 		const id = await ctx.db.insert("ideaComment", {
 			ideaId: args.ideaId,
@@ -370,9 +389,7 @@ export const commentOnIdea = mutation({
 			authorName: readableName(identity),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
-			...(dedupedMentions && dedupedMentions.length > 0
-				? { mentions: dedupedMentions }
-				: {}),
+			...(finalMentions.length > 0 ? { mentions: finalMentions } : {}),
 		});
 
 		await ctx.db.patch(args.ideaId, {
