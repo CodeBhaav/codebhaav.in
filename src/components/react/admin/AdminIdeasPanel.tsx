@@ -13,6 +13,8 @@ import {
 	PanelHeader,
 	formatRelative,
 } from "./AdminOverview";
+import { MAX_CATEGORIES_PER_ROW } from "../../../../convex/projectCategories";
+import { CategoryPicker } from "../projects/CategoryPicker";
 
 type StatusFilter = "all" | "open" | "promoted" | "rejected";
 
@@ -248,6 +250,9 @@ export function AdminIdeasPanel() {
 							title: args.title,
 							description: args.description,
 							techStack: args.techStack,
+							...(args.categories.length > 0
+								? { categories: args.categories }
+								: {}),
 						});
 						setPromoteId(null);
 						window.location.href = `/admin/projects/${res.slug}`;
@@ -302,6 +307,7 @@ interface PromoteArgs {
 	title: string;
 	description: string;
 	techStack: string[];
+	categories: string[];
 }
 
 function PromoteModal({
@@ -309,7 +315,12 @@ function PromoteModal({
 	onClose,
 	onPromote,
 }: {
-	idea: { id: string; title: string; description: string };
+	idea: {
+		id: string;
+		title: string;
+		description: string;
+		categories: string[];
+	};
 	onClose: () => void;
 	onPromote: (args: PromoteArgs) => Promise<void>;
 }) {
@@ -317,6 +328,7 @@ function PromoteModal({
 	const [description, setDescription] = useState(idea.description);
 	const [techInput, setTechInput] = useState("");
 	const [techStack, setTechStack] = useState<string[]>([]);
+	const [categories, setCategories] = useState<string[]>(idea.categories);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -338,6 +350,7 @@ function PromoteModal({
 				title: title.trim(),
 				description: description.trim(),
 				techStack,
+				categories,
 			});
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Failed to promote");
@@ -434,6 +447,21 @@ function PromoteModal({
 								))}
 							</div>
 						)}
+					</div>
+					<div>
+						<div className="flex items-baseline justify-between">
+							<span className="text-xs font-medium text-text-secondary">
+								Categories
+							</span>
+							<span className="font-mono text-[10px] text-text-muted">
+								up to {MAX_CATEGORIES_PER_ROW}
+							</span>
+						</div>
+						<CategoryPicker
+							className="mt-1.5"
+							value={categories}
+							onChange={setCategories}
+						/>
 					</div>
 					{error && (
 						<p className="text-xs text-rose-300" role="alert">

@@ -6,6 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
 import { enqueueNotification } from "./notifications";
+import { normalizeCategories } from "./projectCategories";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IDEAS_PER_DAY = 5;
@@ -55,12 +56,14 @@ export const submitIdea = mutation({
 	args: {
 		title: v.string(),
 		description: v.string(),
+		categories: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const identity = await requireUser(ctx);
 		await captureIdentity(ctx, identity);
 		const title = args.title.trim();
 		const description = args.description.trim();
+		const categories = normalizeCategories(args.categories);
 
 		if (title.length < MIN_TITLE_LEN) {
 			throw new Error(`Title must be at least ${MIN_TITLE_LEN} characters`);
@@ -103,6 +106,7 @@ export const submitIdea = mutation({
 			upvoteCount: 0,
 			commentCount: 0,
 			status: "open",
+			...(categories && categories.length > 0 ? { categories } : {}),
 		});
 
 		return { id };
@@ -164,6 +168,7 @@ export const listIdeas = query({
 			commentCount: row.commentCount,
 			submittedAt: row._creationTime,
 			myVote: myVotes.get(row._id) ?? null,
+			categories: row.categories ?? [],
 		}));
 	},
 });
@@ -207,6 +212,7 @@ export const getIdea = query({
 			myVote,
 			promotedToProjectId: idea.promotedToProjectId ?? null,
 			rejectedReason: idea.rejectedReason ?? null,
+			categories: idea.categories ?? [],
 		};
 	},
 });
@@ -582,6 +588,7 @@ export const listIdeasForAdmin = query({
 			submittedAt: r._creationTime,
 			rejectedReason: r.rejectedReason ?? null,
 			promotedToProjectId: r.promotedToProjectId ?? null,
+			categories: r.categories ?? [],
 		}));
 	},
 });
@@ -656,6 +663,7 @@ export const promoteIdeaToProject = mutation({
 		title: v.string(),
 		description: v.string(),
 		techStack: v.array(v.string()),
+		categories: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const admin = await requireAdmin(ctx);
@@ -680,6 +688,12 @@ export const promoteIdeaToProject = mutation({
 			.map((t) => t.trim())
 			.filter(Boolean)
 			.slice(0, 12);
+		// Default to whatever the originating idea was tagged with; admin
+		// can override by passing `categories` explicitly.
+		const categories =
+			normalizeCategories(args.categories) ??
+			normalizeCategories(idea.categories) ??
+			[];
 
 		const baseSlug = slugify(title);
 		const slug = await ensureUniqueSlug(ctx, baseSlug);
@@ -695,6 +709,7 @@ export const promoteIdeaToProject = mutation({
 			originatorName: idea.submitterName,
 			interestCount: 0,
 			commentCount: 0,
+			...(categories.length > 0 ? { categories } : {}),
 		});
 
 		await ctx.db.patch(args.ideaId, {

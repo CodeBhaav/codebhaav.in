@@ -4,6 +4,7 @@ import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { formatRelative } from "../admin/AdminOverview";
 import { BuildTeamCard } from "./BuildTeamCard";
+import { CategoriesCard } from "./CategoriesCard";
 import { CommentThread } from "./CommentThread";
 import { InterestButton } from "./InterestButton";
 import { ProjectLinksCard } from "./ProjectLinksCard";
@@ -126,12 +127,17 @@ export function ProjectDetailPanel({ slug }: Props) {
 					</section>
 				</div>
 
-				{/* Sidebar: links + tech stack + team + status info */}
+				{/* Sidebar: links + categories + tech stack + team + status info */}
 				<aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
 					<ProjectLinksCard
 						projectId={project.id}
 						repoUrl={project.repoUrl}
 						demoUrl={project.demoUrl}
+						canEdit={canManage}
+					/>
+					<CategoriesCard
+						projectId={project.id}
+						categories={project.categories}
 						canEdit={canManage}
 					/>
 					<TechStackCard

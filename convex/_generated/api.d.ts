@@ -24,6 +24,7 @@ import type * as http from "../http.js";
 import type * as members from "../members.js";
 import type * as notifications from "../notifications.js";
 import type * as profiles from "../profiles.js";
+import type * as projectCategories from "../projectCategories.js";
 import type * as projectIdeas from "../projectIdeas.js";
 import type * as projects from "../projects.js";
 import type * as resendConfig from "../resendConfig.js";
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   members: typeof members;
   notifications: typeof notifications;
   profiles: typeof profiles;
+  projectCategories: typeof projectCategories;
   projectIdeas: typeof projectIdeas;
   projects: typeof projects;
   resendConfig: typeof resendConfig;

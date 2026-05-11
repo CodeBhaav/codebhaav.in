@@ -1,22 +1,37 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { SignInButton, useUser } from "@clerk/clerk-react";
 import { MessageSquare, Plus } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
+import {
+	CATEGORIES,
+	CATEGORY_KEYS,
+	type CategoryKey,
+} from "../../../../convex/projectCategories";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { Avatar, formatRelative } from "../admin/AdminOverview";
+import { CategoryPills } from "./CategoryPicker";
 import { VoteButton } from "./VoteButton";
 import { IdeaSubmitForm } from "./IdeaSubmitForm";
 
 type Sort = "top" | "new";
 
+type CategoryFilter = "all" | CategoryKey;
+
 export function IdeasListPanel() {
 	const { user, isLoaded } = useUser();
 	const [sort, setSort] = useState<Sort>("top");
 	const [composerOpen, setComposerOpen] = useState(false);
+	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 	const ideas = useQuery(api.projectIdeas.listIdeas, { sort, limit: 100 });
 	const voteOnIdea = useMutation(api.projectIdeas.voteOnIdea);
+
+	const visible = useMemo(() => {
+		if (!ideas) return ideas;
+		if (categoryFilter === "all") return ideas;
+		return ideas.filter((i) => i.categories.includes(categoryFilter));
+	}, [ideas, categoryFilter]);
 
 	return (
 		<div className="space-y-6">
@@ -64,31 +79,54 @@ export function IdeasListPanel() {
 				/>
 			)}
 
-			<div className="flex items-center gap-1 rounded-button border border-border bg-card p-1 w-fit">
-				{(["top", "new"] as Sort[]).map((s) => (
-					<button
-						key={s}
-						type="button"
-						onClick={() => setSort(s)}
-						className={cn(
-							"rounded-[4px] px-3 py-1 text-xs font-medium transition-colors capitalize",
-							sort === s
-								? "bg-accent/10 text-accent"
-								: "text-text-secondary hover:bg-surface hover:text-text-primary",
-						)}
-					>
-						{s}
-					</button>
-				))}
+			<div className="flex flex-wrap items-center gap-2">
+				<div className="flex items-center gap-1 rounded-button border border-border bg-card p-1 w-fit">
+					{(["top", "new"] as Sort[]).map((s) => (
+						<button
+							key={s}
+							type="button"
+							onClick={() => setSort(s)}
+							className={cn(
+								"rounded-[4px] px-3 py-1 text-xs font-medium transition-colors capitalize",
+								sort === s
+									? "bg-accent/10 text-accent"
+									: "text-text-secondary hover:bg-surface hover:text-text-primary",
+							)}
+						>
+							{s}
+						</button>
+					))}
+				</div>
+				<div className="flex items-center gap-1 overflow-x-auto rounded-button border border-border bg-card p-1 w-fit">
+					{(["all", ...CATEGORY_KEYS] as CategoryFilter[]).map((c) => (
+						<button
+							key={c}
+							type="button"
+							onClick={() => setCategoryFilter(c)}
+							className={cn(
+								"rounded-[4px] px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap",
+								categoryFilter === c
+									? "bg-accent/10 text-accent"
+									: "text-text-secondary hover:bg-surface hover:text-text-primary",
+							)}
+						>
+							{c === "all" ? "All" : CATEGORIES[c].label}
+						</button>
+					))}
+				</div>
 			</div>
 
-			{ideas === undefined ? (
+			{visible === undefined ? (
 				<LoadingState />
-			) : ideas.length === 0 ? (
-				<EmptyState onShare={() => setComposerOpen(true)} canShare={!!user} />
+			) : visible.length === 0 ? (
+				<EmptyState
+					onShare={() => setComposerOpen(true)}
+					canShare={!!user}
+					filteredEmpty={categoryFilter !== "all"}
+				/>
 			) : (
 				<ul className="space-y-3">
-					{ideas.map((idea) => (
+					{visible.map((idea) => (
 						<IdeaRow
 							key={idea.id}
 							idea={idea}
@@ -116,6 +154,7 @@ interface IdeaSummary {
 	commentCount: number;
 	submittedAt: number;
 	myVote: "up" | "down" | null;
+	categories: string[];
 }
 
 function IdeaRow({
@@ -140,9 +179,12 @@ function IdeaRow({
 					size="lg"
 				/>
 				<div className="min-w-0 flex-1">
-					<h3 className="text-base font-semibold text-text-primary leading-snug transition-colors group-hover:text-accent">
-						{idea.title}
-					</h3>
+					<div className="flex flex-wrap items-start justify-between gap-2">
+						<h3 className="text-base font-semibold text-text-primary leading-snug transition-colors group-hover:text-accent">
+							{idea.title}
+						</h3>
+						<CategoryPills categories={idea.categories} size="xs" />
+					</div>
 					<p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-text-secondary">
 						{idea.description}
 					</p>
@@ -179,9 +221,11 @@ function LoadingState() {
 function EmptyState({
 	onShare,
 	canShare,
+	filteredEmpty,
 }: {
 	onShare: () => void;
 	canShare: boolean;
+	filteredEmpty?: boolean;
 }) {
 	return (
 		<div className="rounded-card border border-dashed border-border bg-background/40 px-6 py-12 text-center">
@@ -189,9 +233,11 @@ function EmptyState({
 
 			</p>
 			<p className="mt-2 text-sm text-text-secondary">
-				No ideas yet. Be the first to share one.
+				{filteredEmpty
+					? "No ideas in this category yet."
+					: "No ideas yet. Be the first to share one."}
 			</p>
-			{canShare && (
+			{canShare && !filteredEmpty && (
 				<button
 					type="button"
 					onClick={onShare}

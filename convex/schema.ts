@@ -123,6 +123,10 @@ export default defineSchema({
 		),
 		rejectedReason: v.optional(v.string()),
 		promotedToProjectId: v.optional(v.id("project")),
+		// Up to MAX_CATEGORIES_PER_ROW category keys from projectCategories.ts.
+		// Stored as strings (not literal union) for forward-compat with new
+		// keys without a schema migration.
+		categories: v.optional(v.array(v.string())),
 	})
 		.index("by_status", ["status"])
 		.index("by_submitter", ["submitterClerkUserId"])
@@ -193,6 +197,9 @@ export default defineSchema({
 		// passed in from the client are normalized to absent.
 		repoUrl: v.optional(v.string()),
 		demoUrl: v.optional(v.string()),
+		// Mirrors projectIdea.categories  copied over on promotion. Editable
+		// on the project itself via updateProject.
+		categories: v.optional(v.array(v.string())),
 	})
 		.index("by_slug", ["slug"])
 		.index("by_status", ["status"])

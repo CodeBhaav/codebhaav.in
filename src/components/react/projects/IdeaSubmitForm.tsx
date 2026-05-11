@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { SignInButton, useUser } from "@clerk/clerk-react";
 import { api } from "../../../../convex/_generated/api";
+import { MAX_CATEGORIES_PER_ROW } from "../../../../convex/projectCategories";
 import { cn } from "@/lib/utils";
+import { CategoryPicker } from "./CategoryPicker";
 
 const MIN_TITLE = 8;
 const MAX_TITLE = 140;
@@ -19,6 +21,7 @@ export function IdeaSubmitForm({ onSuccess, className }: Props) {
 	const submit = useMutation(api.projectIdeas.submitIdea);
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
+	const [categories, setCategories] = useState<string[]>([]);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -60,9 +63,11 @@ export function IdeaSubmitForm({ onSuccess, className }: Props) {
 			const res = await submit({
 				title: title.trim(),
 				description: description.trim(),
+				...(categories.length > 0 ? { categories } : {}),
 			});
 			setTitle("");
 			setDescription("");
+			setCategories([]);
 			setSavedAt(Date.now());
 			onSuccess?.(res.id);
 		} catch (e) {
@@ -140,6 +145,22 @@ export function IdeaSubmitForm({ onSuccess, className }: Props) {
 					</span>
 				</div>
 			</label>
+
+			<div className="mt-4">
+				<div className="flex items-baseline justify-between">
+					<span className="block text-xs font-medium text-text-secondary">
+						Categories
+					</span>
+					<span className="font-mono text-[10px] text-text-muted">
+						optional · pick up to {MAX_CATEGORIES_PER_ROW}
+					</span>
+				</div>
+				<CategoryPicker
+					className="mt-1.5"
+					value={categories}
+					onChange={setCategories}
+				/>
+			</div>
 
 			{error && (
 				<p className="mt-3 text-xs text-rose-300" role="alert">

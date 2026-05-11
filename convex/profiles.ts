@@ -87,6 +87,7 @@ export const getProfileByUsername = query({
 				status: p.status,
 				interestCount: p.interestCount,
 				techStack: p.techStack,
+				categories: p.categories ?? [],
 			}));
 
 		// Projects user is on the build team for.

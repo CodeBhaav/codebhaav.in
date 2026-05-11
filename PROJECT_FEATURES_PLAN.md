@@ -141,7 +141,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 4. Tag categories on ideas + projects ⬜
+### 4. Tag categories on ideas + projects ✅
 
 **Scope:** small fixed set of category tags applied to ideas and projects. Powers filters and "more like this".
 
@@ -153,6 +153,14 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 - Admin promote modal — same picker (pre-fills from idea's categories)
 - `TechStackCard.tsx` companion: `CategoriesCard.tsx` (read-only on detail; chip pills in sidebar)
 - Filters: `IdeasListPanel` and `ProjectsListPanel` gain a "Category" segmented control next to the existing status filter
+
+### Notes / decisions
+- Skipped the first-category index. At our scale a full collect → filter is fine; a partial index keyed by `categories[0]` doesn't help because each row has up to 2 categories and the second wouldn't be indexed. If filter throughput becomes a problem later, switch to a separate `projectCategoryLink` join table.
+- `normalizeCategories` is the single normalizer used by both `submitIdea`, `promoteIdeaToProject`, and `updateProject`. It lowercases + dedupes + drops anything not in `CATEGORY_KEYS` + truncates at `MAX_CATEGORIES_PER_ROW`. Server-side validation only — clients send raw strings.
+- `promoteIdeaToProject` inherits the originating idea's categories by default; admin can override in the promote modal.
+- Project sidebar now stacks Links → Categories → Tech stack → Build team. Categories card hidden for non-managers when empty (matches the Links card behavior).
+- Idea + project list cards display the `<CategoryPills>` chip strip. Used `text-[9px]` xs variant on idea list to avoid wrapping the title.
+- `<CategoryPicker>` caps at 2; selecting a third is a disabled-styled no-op rather than auto-evicting an earlier choice (clearer mental model).
 
 ---
 

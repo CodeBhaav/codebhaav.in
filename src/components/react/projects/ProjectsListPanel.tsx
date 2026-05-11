@@ -2,9 +2,15 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { Hammer, Lightbulb, MessageSquare, Rocket } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
+import {
+	CATEGORIES,
+	CATEGORY_KEYS,
+	type CategoryKey,
+} from "../../../../convex/projectCategories";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { formatRelative } from "../admin/AdminOverview";
+import { CategoryPills } from "./CategoryPicker";
 import { InterestButton } from "./InterestButton";
 
 type Filter = "all" | "open" | "building" | "shipped";
@@ -16,8 +22,11 @@ const FILTER_LABEL: Record<Filter, string> = {
 	shipped: "Shipped",
 };
 
+type CategoryFilter = "all" | CategoryKey;
+
 export function ProjectsListPanel() {
 	const [filter, setFilter] = useState<Filter>("all");
+	const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 	const allProjects = useQuery(api.projects.listProjects, {
 		status: "all",
 		sort: "status",
@@ -40,9 +49,15 @@ export function ProjectsListPanel() {
 
 	const visible = useMemo(() => {
 		if (!allProjects) return [];
-		if (filter === "all") return allProjects;
-		return allProjects.filter((p) => p.status === filter);
-	}, [allProjects, filter]);
+		let rows = allProjects;
+		if (filter !== "all") {
+			rows = rows.filter((p) => p.status === filter);
+		}
+		if (categoryFilter !== "all") {
+			rows = rows.filter((p) => p.categories.includes(categoryFilter));
+		}
+		return rows;
+	}, [allProjects, filter, categoryFilter]);
 
 	return (
 		<div className="space-y-6">
@@ -60,32 +75,51 @@ export function ProjectsListPanel() {
 				</p>
 			</header>
 
-			<div className="flex items-center gap-1 rounded-button border border-border bg-card p-1 w-fit">
-				{(Object.keys(FILTER_LABEL) as Filter[]).map((f) => (
-					<button
-						key={f}
-						type="button"
-						onClick={() => setFilter(f)}
-						className={cn(
-							"inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1 text-xs font-medium transition-colors",
-							filter === f
-								? "bg-accent/10 text-accent"
-								: "text-text-secondary hover:bg-surface hover:text-text-primary",
-						)}
-					>
-						{FILTER_LABEL[f]}
-						<span
+			<div className="flex flex-wrap items-center gap-2">
+				<div className="flex items-center gap-1 rounded-button border border-border bg-card p-1 w-fit">
+					{(Object.keys(FILTER_LABEL) as Filter[]).map((f) => (
+						<button
+							key={f}
+							type="button"
+							onClick={() => setFilter(f)}
 							className={cn(
-								"rounded-[3px] px-1 font-mono text-[10px] tabular-nums",
+								"inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1 text-xs font-medium transition-colors",
 								filter === f
-									? "bg-accent/20 text-accent"
-									: "bg-surface text-text-muted",
+									? "bg-accent/10 text-accent"
+									: "text-text-secondary hover:bg-surface hover:text-text-primary",
 							)}
 						>
-							{counts[f]}
-						</span>
-					</button>
-				))}
+							{FILTER_LABEL[f]}
+							<span
+								className={cn(
+									"rounded-[3px] px-1 font-mono text-[10px] tabular-nums",
+									filter === f
+										? "bg-accent/20 text-accent"
+										: "bg-surface text-text-muted",
+								)}
+							>
+								{counts[f]}
+							</span>
+						</button>
+					))}
+				</div>
+				<div className="flex items-center gap-1 overflow-x-auto rounded-button border border-border bg-card p-1 w-fit">
+					{(["all", ...CATEGORY_KEYS] as CategoryFilter[]).map((c) => (
+						<button
+							key={c}
+							type="button"
+							onClick={() => setCategoryFilter(c)}
+							className={cn(
+								"rounded-[4px] px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap",
+								categoryFilter === c
+									? "bg-accent/10 text-accent"
+									: "text-text-secondary hover:bg-surface hover:text-text-primary",
+							)}
+						>
+							{c === "all" ? "All" : CATEGORIES[c].label}
+						</button>
+					))}
+				</div>
 			</div>
 
 			{allProjects === undefined ? (
@@ -126,6 +160,7 @@ interface ProjectSummary {
 	buildStartedAt: number | null;
 	shippedAt: number | null;
 	youInterested: boolean;
+	categories: string[];
 }
 
 function ProjectCard({
@@ -151,6 +186,9 @@ function ProjectCard({
 							: formatRelative(project.createdAt)}
 				</span>
 			</div>
+			{project.categories.length > 0 && (
+				<CategoryPills className="mt-3" categories={project.categories} />
+			)}
 			<h3 className="mt-3 text-base font-semibold text-text-primary leading-snug transition-colors group-hover:text-accent">
 				{project.title}
 			</h3>

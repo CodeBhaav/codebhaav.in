@@ -6,6 +6,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
 import { enqueueNotification } from "./notifications";
+import { normalizeCategories } from "./projectCategories";
 
 const MAX_COMMENT_LEN = 2000;
 
@@ -170,6 +171,7 @@ export const listProjects = query({
 			buildStartedAt: p.buildStartedAt ?? null,
 			shippedAt: p.shippedAt ?? null,
 			youInterested: myInterestIds.has(p._id),
+			categories: p.categories ?? [],
 		}));
 	},
 });
@@ -244,6 +246,7 @@ export const getProjectBySlug = query({
 			teamLeadClerkUserId: project.teamLeadClerkUserId ?? null,
 			repoUrl: project.repoUrl ?? null,
 			demoUrl: project.demoUrl ?? null,
+			categories: project.categories ?? [],
 			createdAt: project._creationTime,
 			buildStartedAt: project.buildStartedAt ?? null,
 			shippedAt: project.shippedAt ?? null,
@@ -586,6 +589,7 @@ export const listProjectsForAdmin = query({
 			createdAt: p._creationTime,
 			buildStartedAt: p.buildStartedAt ?? null,
 			shippedAt: p.shippedAt ?? null,
+			categories: p.categories ?? [],
 		}));
 	},
 });
@@ -619,6 +623,7 @@ export const getProjectForAdmin = query({
 			interestCount: project.interestCount,
 			commentCount: project.commentCount,
 			teamLeadClerkUserId: project.teamLeadClerkUserId ?? null,
+			categories: project.categories ?? [],
 			createdAt: project._creationTime,
 			buildStartedAt: project.buildStartedAt ?? null,
 			shippedAt: project.shippedAt ?? null,
@@ -660,6 +665,7 @@ export const updateProject = mutation({
 		techStack: v.optional(v.array(v.string())),
 		repoUrl: v.optional(v.string()),
 		demoUrl: v.optional(v.string()),
+		categories: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		await requireProjectManager(ctx, args.projectId);
@@ -685,6 +691,9 @@ export const updateProject = mutation({
 		}
 		if (args.demoUrl !== undefined) {
 			patch.demoUrl = normalizeProjectLink(args.demoUrl, "Demo URL");
+		}
+		if (args.categories !== undefined) {
+			patch.categories = normalizeCategories(args.categories) ?? [];
 		}
 		await ctx.db.patch(args.projectId, patch);
 		return { ok: true };
