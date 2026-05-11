@@ -152,6 +152,26 @@ export function AdminProjectDetail({ slug }: Props) {
 		}
 	};
 
+	// One-click: add a volunteer to the team AND promote them to team lead.
+	const handleAddAsLead = async (clerkUserId: string) => {
+		const role = (memberRoleInput[clerkUserId] ?? "").trim() || "Team Lead";
+		setPendingMember(clerkUserId);
+		setError(null);
+		try {
+			await addTeamMember({ projectId, clerkUserId, role });
+			await setTeamLead({ projectId, clerkUserId });
+			setMemberRoleInput((m) => {
+				const next = { ...m };
+				delete next[clerkUserId];
+				return next;
+			});
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Failed to set lead");
+		} finally {
+			setPendingMember(null);
+		}
+	};
+
 	const addTech = () => {
 		const t = techInput.trim();
 		if (!t || draftTech.includes(t) || draftTech.length >= 12) return;
@@ -467,8 +487,12 @@ export function AdminProjectDetail({ slug }: Props) {
 						Volunteers ({project.volunteers.length})
 					</p>
 					<p className="mt-1 text-xs text-text-secondary">
-						Members who clicked "I wanna build this". Contact them off-platform
-						and add the ones you pick to the team with a role.
+						Members who clicked "I wanna build this". Type a role (e.g.{" "}
+						<span className="font-mono">Backend</span>,{" "}
+						<span className="font-mono">Designer</span>) then{" "}
+						<strong className="text-text-primary">Add</strong>  or click{" "}
+						<strong className="text-amber-300">Make lead</strong> to add them
+						AND designate them as the project's team lead in one click.
 					</p>
 				</header>
 				{project.volunteers.length === 0 ? (
@@ -501,7 +525,7 @@ export function AdminProjectDetail({ slug }: Props) {
 									<>
 										<input
 											type="text"
-											placeholder="Role"
+											placeholder="Role (e.g. Backend)"
 											value={memberRoleInput[v.clerkUserId] ?? ""}
 											onChange={(e) =>
 												setMemberRoleInput((m) => ({
@@ -509,16 +533,27 @@ export function AdminProjectDetail({ slug }: Props) {
 													[v.clerkUserId]: e.target.value,
 												}))
 											}
-											className="h-8 w-36 rounded-button border border-border bg-background px-2 text-xs text-text-primary outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+											className="h-8 w-40 rounded-button border border-border bg-background px-2 text-xs text-text-primary outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
 										/>
 										<button
 											type="button"
 											disabled={pendingMember === v.clerkUserId}
 											onClick={() => handleAddMember(v.clerkUserId)}
+											title="Add to team with the role above"
 											className="inline-flex h-8 items-center gap-1 rounded-button bg-accent px-3 text-xs font-semibold text-[#1a1208] transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
 										>
 											<Plus className="size-3" aria-hidden />
 											Add
+										</button>
+										<button
+											type="button"
+											disabled={pendingMember === v.clerkUserId}
+											onClick={() => handleAddAsLead(v.clerkUserId)}
+											title="Add to team AND make team lead in one click"
+											className="inline-flex h-8 items-center gap-1 rounded-button border border-amber-500/40 bg-amber-500/10 px-3 text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											<Crown className="size-3" aria-hidden />
+											Make lead
 										</button>
 									</>
 								)}
