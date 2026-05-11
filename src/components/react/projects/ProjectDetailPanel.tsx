@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { ArrowLeft, Lightbulb } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -11,8 +11,15 @@ interface Props {
 	slug: string;
 }
 
+const COMMENTS_PAGE_SIZE = 50;
+
 export function ProjectDetailPanel({ slug }: Props) {
 	const project = useQuery(api.projects.getProjectBySlug, { slug });
+	const commentsQuery = usePaginatedQuery(
+		api.projects.listProjectComments,
+		project ? { projectId: project.id as Id<"project"> } : "skip",
+		{ initialNumItems: COMMENTS_PAGE_SIZE },
+	);
 	const toggleInterest = useMutation(api.projects.toggleInterest);
 	const postComment = useMutation(api.projects.commentOnProject);
 	const deleteComment = useMutation(api.projects.deleteMyProjectComment);
@@ -128,7 +135,10 @@ export function ProjectDetailPanel({ slug }: Props) {
 
 			<section className="rounded-card border border-border bg-card p-6">
 				<CommentThread
-					comments={project.comments}
+					comments={commentsQuery.results}
+					totalCount={project.commentCount}
+					loadStatus={commentsQuery.status}
+					onLoadMore={() => commentsQuery.loadMore(COMMENTS_PAGE_SIZE)}
 					placeholder="Shape this project  features, scope, concerns, suggestions. Type @ to mention someone."
 					onPost={async ({ body, parentId, mentions }) => {
 						await postComment({

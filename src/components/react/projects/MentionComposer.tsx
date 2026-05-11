@@ -1,11 +1,11 @@
 import {
+	type ChangeEvent,
+	type KeyboardEvent,
 	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
-	type ChangeEvent,
-	type KeyboardEvent,
 } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -177,13 +177,35 @@ export function MentionComposer({
 		return () => cancelAnimationFrame(id);
 	}, [autoFocus]);
 
+	const backdropRef = useRef<HTMLDivElement>(null);
+	const handleScroll = useCallback(() => {
+		const ta = textareaRef.current;
+		const bg = backdropRef.current;
+		if (ta && bg) bg.style.transform = `translateY(${-ta.scrollTop}px)`;
+	}, []);
+
 	return (
 		<div className={cn("relative", className)}>
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-0 overflow-hidden"
+			>
+				<div
+					ref={backdropRef}
+					className="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words min-h-[88px]"
+				>
+					<BackdropBody body={value} mentions={mentions} />
+					{/* Trailing newline placeholder so the backdrop height tracks the textarea
+					    when the user ends with \n */}
+					{value.endsWith("\n") && <span aria-hidden>{" "}</span>}
+				</div>
+			</div>
 			<textarea
 				ref={textareaRef}
 				value={value}
 				onChange={handleChange}
 				onKeyDown={handleKeyDown}
+				onScroll={handleScroll}
 				onBlur={() => {
 					// Defer so click on a candidate still registers.
 					setTimeout(() => setState({ ...INITIAL }), 120);
@@ -191,7 +213,8 @@ export function MentionComposer({
 				placeholder={placeholder}
 				rows={rows}
 				maxLength={maxLength}
-				className="w-full resize-y bg-transparent px-4 py-3 text-sm leading-relaxed text-text-primary placeholder:text-text-muted outline-none min-h-[88px]"
+				className="relative z-10 w-full resize-y bg-transparent px-4 py-3 text-sm leading-relaxed text-transparent placeholder:text-text-muted outline-none min-h-[88px]"
+				style={{ caretColor: "var(--text-primary)" }}
 			/>
 			{state.open && visible.length > 0 && (
 				<ul
@@ -298,5 +321,80 @@ export function RenderedBody({
 				),
 			)}
 		</p>
+	);
+}
+
+/**
+ * Backdrop renderer used by the composer overlay. Mirrors the textarea
+ * text with mention tokens wrapped in a styled span; the rest is plain
+ * text so the textarea's caret/selection align character-by-character.
+ *
+ * IMPORTANT: every character in `value` must appear in this output for
+ * the offsets to match. We use rounded backgrounds with negative-margin
+ * padding so we don't change horizontal advance.
+ */
+export function BackdropBody({
+	body,
+	mentions,
+}: {
+	body: string;
+	mentions: Mention[];
+}) {
+	const handles = useMemo(() => {
+		const set = new Set<string>();
+		for (const m of mentions) {
+			if (m.username) set.add(m.username.toLowerCase());
+			const first = (m.name.split(/\s+/)[0] || "").toLowerCase();
+			if (first) set.add(first);
+			const firstCap = m.name.split(/\s+/)[0];
+			if (firstCap) set.add(firstCap);
+		}
+		return set;
+	}, [mentions]);
+
+	const tokens = useMemo(() => {
+		if (handles.size === 0) return [{ type: "text" as const, value: body }];
+		const pattern = new RegExp(
+			`@(${Array.from(handles)
+				.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+				.join("|")})\\b`,
+			"gi",
+		);
+		const out: Array<{ type: "text" | "mention"; value: string }> = [];
+		let last = 0;
+		let match: RegExpExecArray | null;
+		while ((match = pattern.exec(body)) !== null) {
+			if (match.index > last) {
+				out.push({ type: "text", value: body.slice(last, match.index) });
+			}
+			out.push({ type: "mention", value: match[0] });
+			last = match.index + match[0].length;
+		}
+		if (last < body.length) {
+			out.push({ type: "text", value: body.slice(last) });
+		}
+		return out;
+	}, [body, handles]);
+
+	return (
+		<>
+			{tokens.map((t, i) =>
+				t.type === "mention" ? (
+					<span
+						key={i}
+						// rounded BG must NOT change advance widths  no padding on
+						// the inline span, just background + color.
+						className="rounded-[2px] bg-accent/10 text-accent"
+					>
+						{t.value}
+					</span>
+				) : (
+					// Wrap plain text in a span so React keeps consistent DOM nodes.
+					<span key={i} className="text-text-primary">
+						{t.value}
+					</span>
+				),
+			)}
+		</>
 	);
 }

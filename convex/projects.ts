@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -145,12 +146,6 @@ export const getProjectBySlug = query({
 			youInterested = Boolean(row);
 		}
 
-		const comments = await ctx.db
-			.query("projectComment")
-			.withIndex("by_project", (q) => q.eq("projectId", project._id))
-			.collect();
-		comments.sort((a, b) => a._creationTime - b._creationTime);
-
 		const teamRows = await ctx.db
 			.query("projectBuildTeamMember")
 			.withIndex("by_project", (q) => q.eq("projectId", project._id))
@@ -178,7 +173,55 @@ export const getProjectBySlug = query({
 				role: t.role,
 				addedAt: t._creationTime,
 			})),
-			comments: comments.map((c) => ({
+		};
+	},
+});
+
+export const listProjectComments = query({
+	args: {
+		projectId: v.id("project"),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, args) => {
+		const project = await ctx.db.get(args.projectId);
+		if (!project) {
+			return {
+				page: [],
+				isDone: true,
+				continueCursor: "" as string,
+			};
+		}
+
+		const topLevels = await ctx.db
+			.query("projectComment")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.filter((q) => q.eq(q.field("parentId"), undefined))
+			.order("asc")
+			.paginate(args.paginationOpts);
+
+		const allChildren: Doc<"projectComment">[] = [];
+		const stack = topLevels.page.map((c) => c._id);
+		const seen = new Set<string>();
+		while (stack.length > 0) {
+			const id = stack.pop()!;
+			if (seen.has(id)) continue;
+			seen.add(id);
+			const kids = await ctx.db
+				.query("projectComment")
+				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+				.filter((q) => q.eq(q.field("parentId"), id))
+				.collect();
+			for (const k of kids) {
+				allChildren.push(k);
+				stack.push(k._id);
+			}
+		}
+
+		const identity = await ctx.auth.getUserIdentity();
+		const everything = [...topLevels.page, ...allChildren];
+		return {
+			...topLevels,
+			page: everything.map((c) => ({
 				id: c._id,
 				authorName: c.authorName,
 				authorUsername: c.authorUsername ?? null,

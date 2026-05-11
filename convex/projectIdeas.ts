@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation, query } from "./_generated/server";
@@ -189,12 +190,6 @@ export const getIdea = query({
 			if (v) myVote = v.direction ?? "up";
 		}
 
-		const comments = await ctx.db
-			.query("ideaComment")
-			.withIndex("by_idea", (q) => q.eq("ideaId", idea._id))
-			.collect();
-		comments.sort((a, b) => a._creationTime - b._creationTime);
-
 		return {
 			id: idea._id,
 			title: idea.title,
@@ -209,7 +204,64 @@ export const getIdea = query({
 			myVote,
 			promotedToProjectId: idea.promotedToProjectId ?? null,
 			rejectedReason: idea.rejectedReason ?? null,
-			comments: comments.map((c) => ({
+		};
+	},
+});
+
+/**
+ * Paginated comment feed for an idea.
+ *
+ * Pagination is on top-level comments only (sorted oldest-first so the
+ * conversation reads naturally top-to-bottom). Each top-level pulls its
+ * entire reply subtree with it  so threads stay intact within a page,
+ * and only the *next* top-level is deferred to load-more.
+ */
+export const listIdeaComments = query({
+	args: {
+		ideaId: v.id("projectIdea"),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, args) => {
+		const idea = await ctx.db.get(args.ideaId);
+		if (!idea) {
+			return {
+				page: [],
+				isDone: true,
+				continueCursor: "" as string,
+			};
+		}
+
+		const topLevels = await ctx.db
+			.query("ideaComment")
+			.withIndex("by_idea", (q) => q.eq("ideaId", args.ideaId))
+			.filter((q) => q.eq(q.field("parentId"), undefined))
+			.order("asc")
+			.paginate(args.paginationOpts);
+
+		// Pull every descendant of the top-levels we just paged in.
+		const allChildren: Doc<"ideaComment">[] = [];
+		const stack = topLevels.page.map((c) => c._id);
+		const seen = new Set<string>();
+		while (stack.length > 0) {
+			const id = stack.pop()!;
+			if (seen.has(id)) continue;
+			seen.add(id);
+			const kids = await ctx.db
+				.query("ideaComment")
+				.withIndex("by_idea", (q) => q.eq("ideaId", args.ideaId))
+				.filter((q) => q.eq(q.field("parentId"), id))
+				.collect();
+			for (const k of kids) {
+				allChildren.push(k);
+				stack.push(k._id);
+			}
+		}
+
+		const identity = await ctx.auth.getUserIdentity();
+		const everything = [...topLevels.page, ...allChildren];
+		return {
+			...topLevels,
+			page: everything.map((c) => ({
 				id: c._id,
 				authorName: c.authorName,
 				authorUsername: c.authorUsername ?? null,

@@ -39,6 +39,14 @@ interface Props {
 	onDelete: (commentId: string) => Promise<void>;
 	placeholder?: string;
 	className?: string;
+	// Optional pagination (passed from usePaginatedQuery in the caller).
+	loadStatus?:
+		| "LoadingFirstPage"
+		| "CanLoadMore"
+		| "LoadingMore"
+		| "Exhausted";
+	onLoadMore?: () => void;
+	totalCount?: number;
 }
 
 interface TreeNode {
@@ -87,6 +95,9 @@ export function CommentThread({
 	onDelete,
 	placeholder = "Add a comment, suggestion, or question. Type @ to mention someone.",
 	className,
+	loadStatus,
+	onLoadMore,
+	totalCount,
 }: Props) {
 	const { user, isLoaded } = useUser();
 	const [draft, setDraft] = useState("");
@@ -138,8 +149,10 @@ export function CommentThread({
 					Discussion
 				</h3>
 				<span className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
-					{comments.length}{" "}
-					{comments.length === 1 ? "comment" : "comments"}
+					{typeof totalCount === "number" ? totalCount : comments.length}{" "}
+					{(typeof totalCount === "number" ? totalCount : comments.length) === 1
+						? "comment"
+						: "comments"}
 				</span>
 			</header>
 
@@ -177,7 +190,16 @@ export function CommentThread({
 				</p>
 			)}
 
-			{tree.length === 0 ? (
+			{loadStatus === "LoadingFirstPage" ? (
+				<div className="space-y-3">
+					{[1, 2, 3].map((i) => (
+						<div
+							key={i}
+							className="h-20 animate-pulse rounded-[6px] border border-border bg-card"
+						/>
+					))}
+				</div>
+			) : tree.length === 0 ? (
 				<div className="rounded-[6px] border border-dashed border-border bg-background/40 px-4 py-6 text-center text-sm text-text-muted">
 					No comments yet. Be the first.
 				</div>
@@ -194,6 +216,25 @@ export function CommentThread({
 						/>
 					))}
 				</ul>
+			)}
+
+			{loadStatus === "CanLoadMore" && onLoadMore && (
+				<div className="flex justify-center pt-2">
+					<button
+						type="button"
+						onClick={onLoadMore}
+						className="inline-flex h-8 items-center rounded-button border border-border bg-card px-4 text-xs font-medium text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+					>
+						Load more comments
+					</button>
+				</div>
+			)}
+			{loadStatus === "LoadingMore" && (
+				<div className="flex justify-center pt-2">
+					<span className="font-mono text-[11px] uppercase tracking-widest text-text-muted">
+						Loading…
+					</span>
+				</div>
 			)}
 		</div>
 	);

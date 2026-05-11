@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { ArrowLeft, Rocket } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -10,10 +10,17 @@ interface Props {
 	ideaId: string;
 }
 
+const COMMENTS_PAGE_SIZE = 50;
+
 export function IdeaDetailPanel({ ideaId }: Props) {
 	const idea = useQuery(api.projectIdeas.getIdea, {
 		id: ideaId as Id<"projectIdea">,
 	});
+	const commentsQuery = usePaginatedQuery(
+		api.projectIdeas.listIdeaComments,
+		{ ideaId: ideaId as Id<"projectIdea"> },
+		{ initialNumItems: COMMENTS_PAGE_SIZE },
+	);
 	const voteOnIdea = useMutation(api.projectIdeas.voteOnIdea);
 	const postComment = useMutation(api.projectIdeas.commentOnIdea);
 	const deleteComment = useMutation(api.projectIdeas.deleteMyComment);
@@ -86,7 +93,10 @@ export function IdeaDetailPanel({ ideaId }: Props) {
 
 			<section className="rounded-card border border-border bg-card p-6">
 				<CommentThread
-					comments={idea.comments}
+					comments={commentsQuery.results}
+					totalCount={idea.commentCount}
+					loadStatus={commentsQuery.status}
+					onLoadMore={() => commentsQuery.loadMore(COMMENTS_PAGE_SIZE)}
 					onPost={async ({ body, parentId, mentions }) => {
 						await postComment({
 							ideaId: idea.id as Id<"projectIdea">,
