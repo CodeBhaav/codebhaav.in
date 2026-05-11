@@ -11,6 +11,7 @@ export const siteConfig = {
   nav: {
     links: [
       { id: "mission", name: "Mission", href: "/mission" },
+      { id: "ideas", name: "Ideas", href: "/ideas" },
       { id: "projects", name: "Projects", href: "/projects" },
       { id: "leaderboard", name: "Leaderboard", href: "/leaderboard" },
       { id: "contact", name: "Contact", href: "/contact" },

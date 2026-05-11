@@ -1,0 +1,17 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import IdeaDetailIsland from "@/components/react/islands/IdeaDetailIsland";
+
+export const prerender = false;
+
+const { id } = Astro.params;
+if (!id) {
+	return Astro.redirect("/ideas");
+}
+---
+
+<BaseLayout title="Idea">
+	<section class="mx-auto max-w-3xl px-4 sm:px-6 py-16 md:py-20">
+		<IdeaDetailIsland client:only="react" ideaId={id} />
+	</section>
+</BaseLayout>

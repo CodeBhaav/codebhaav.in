@@ -3,13 +3,20 @@ import {
 	ArrowLeft,
 	Crown,
 	LayoutDashboard,
+	Lightbulb,
 	PanelLeftClose,
 	PanelLeftOpen,
+	Rocket,
 	UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type NavKey = "overview" | "waitlist" | "founding-members";
+type NavKey =
+	| "overview"
+	| "waitlist"
+	| "founding-members"
+	| "ideas"
+	| "projects";
 
 const NAV_ITEMS: ReadonlyArray<{
 	key: NavKey;
@@ -25,6 +32,8 @@ const NAV_ITEMS: ReadonlyArray<{
 		href: "/admin/founding-members",
 		Icon: Crown,
 	},
+	{ key: "ideas", label: "Ideas", href: "/admin/ideas", Icon: Lightbulb },
+	{ key: "projects", label: "Projects", href: "/admin/projects", Icon: Rocket },
 ];
 
 const STORAGE_KEY = "cb_admin_sidebar_collapsed";

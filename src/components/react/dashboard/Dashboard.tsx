@@ -1,5 +1,6 @@
 import { useQuery } from "convex/react";
 import { useUser, UserButton } from "@clerk/clerk-react";
+import { ChevronRight, Lightbulb, MessageSquare, Rocket } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import { useState, useCallback } from "react";
 import posthog from "posthog-js";
@@ -20,6 +21,18 @@ export function Dashboard() {
 	);
 	const application = useQuery(
 		api.foundingMember.getMyApplication,
+		clerkUserId ? {} : "skip",
+	);
+	const myIdeas = useQuery(
+		api.projectIdeas.listMyIdeas,
+		clerkUserId ? {} : "skip",
+	);
+	const myInterested = useQuery(
+		api.projects.listMyInterestedProjects,
+		clerkUserId ? {} : "skip",
+	);
+	const myBuilding = useQuery(
+		api.projects.listMyBuildingProjects,
 		clerkUserId ? {} : "skip",
 	);
 
@@ -96,7 +109,15 @@ export function Dashboard() {
 				</div>
 			)}
 
+			<MyIdeasCard ideas={myIdeas ?? []} />
+			<MyProjectsCard
+				building={myBuilding ?? []}
+				interested={myInterested ?? []}
+			/>
+
 			<div className="mt-6 flex flex-wrap gap-3">
+				<QuickLink href="/ideas" label="Browse Ideas" />
+				<QuickLink href="/projects" label="Browse Projects" />
 				<QuickLink href="/leaderboard" label="View Leaderboard" />
 				{!application && (
 					<QuickLink
@@ -112,6 +133,208 @@ export function Dashboard() {
 				)}
 				<QuickLink href="/dashboard/settings" label="Notification Settings" />
 			</div>
+		</div>
+	);
+}
+
+function MyIdeasCard({
+	ideas,
+}: {
+	ideas: Array<{
+		id: string;
+		title: string;
+		status: "open" | "promoted" | "rejected";
+		upvoteCount: number;
+		commentCount: number;
+		submittedAt: number;
+		rejectedReason: string | null;
+	}>;
+}) {
+	const empty = ideas.length === 0;
+	const visible = ideas.slice(0, 4);
+	const tone: Record<string, string> = {
+		open: "border-border bg-surface text-text-secondary",
+		promoted: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+		rejected: "border-rose-500/40 bg-rose-500/10 text-rose-300",
+	};
+	const label: Record<string, string> = {
+		open: "Open",
+		promoted: "Promoted",
+		rejected: "Not picked",
+	};
+	return (
+		<div className="mt-6 rounded-card border border-border bg-card p-5">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+						Your ideas
+					</p>
+					<p className="mt-1 text-sm text-text-secondary">
+						{empty
+							? "Drop something the community might want to build."
+							: `${ideas.length} idea${ideas.length === 1 ? "" : "s"} submitted`}
+					</p>
+				</div>
+				<a
+					href="/ideas"
+					className="inline-flex h-8 items-center gap-1.5 rounded-button bg-accent px-3 text-xs font-semibold text-[#1a1208] transition-colors hover:bg-accent-hover"
+				>
+					<Lightbulb className="size-3.5" aria-hidden />
+					{empty ? "Share an idea" : "View ideas"}
+				</a>
+			</div>
+			{!empty && (
+				<ul className="mt-4 space-y-2">
+					{visible.map((idea) => (
+						<li key={idea.id}>
+							<a
+								href={`/ideas/${idea.id}`}
+								className="group flex items-center gap-3 rounded-[6px] border border-border bg-background/40 px-3 py-2.5 transition-colors hover:border-border-hover"
+							>
+								<div className="min-w-0 flex-1">
+									<p className="truncate text-sm font-medium text-text-primary transition-colors group-hover:text-accent">
+										{idea.title}
+									</p>
+									<div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-mono text-text-muted">
+										<span>{idea.upvoteCount} votes</span>
+										<span className="inline-flex items-center gap-1">
+											<MessageSquare className="size-3" aria-hidden />
+											{idea.commentCount}
+										</span>
+									</div>
+								</div>
+								<span
+									className={`inline-flex items-center rounded-[4px] border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${tone[idea.status]}`}
+								>
+									{label[idea.status]}
+								</span>
+								<ChevronRight
+									className="size-3.5 text-text-muted transition-transform group-hover:translate-x-0.5"
+									aria-hidden
+								/>
+							</a>
+						</li>
+					))}
+				</ul>
+			)}
+			{ideas.length > 4 && (
+				<a
+					href="/ideas"
+					className="mt-3 inline-block text-xs text-accent hover:text-accent-hover"
+				>
+					View all {ideas.length} →
+				</a>
+			)}
+		</div>
+	);
+}
+
+function MyProjectsCard({
+	building,
+	interested,
+}: {
+	building: Array<{
+		id: string;
+		slug: string;
+		title: string;
+		status: "open" | "building" | "shipped";
+		role: string;
+	}>;
+	interested: Array<{
+		id: string;
+		slug: string;
+		title: string;
+		status: "open" | "building" | "shipped";
+		interestCount: number;
+		commentCount: number;
+	}>;
+}) {
+	if (building.length === 0 && interested.length === 0) return null;
+	return (
+		<div className="mt-6 rounded-card border border-border bg-card p-5">
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<div>
+					<p className="font-mono text-[11px] uppercase tracking-wider text-text-muted">
+						Your projects
+					</p>
+					<p className="mt-1 text-sm text-text-secondary">
+						Where you're on the team or have volunteered to help.
+					</p>
+				</div>
+				<a
+					href="/projects"
+					className="inline-flex h-8 items-center gap-1.5 rounded-button border border-border bg-background px-3 text-xs font-medium text-text-secondary transition-colors hover:border-border-hover hover:text-text-primary"
+				>
+					<Rocket className="size-3.5" aria-hidden />
+					Browse projects
+				</a>
+			</div>
+
+			{building.length > 0 && (
+				<div className="mt-4">
+					<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+						Building ({building.length})
+					</p>
+					<ul className="mt-2 space-y-2">
+						{building.map((p) => (
+							<li key={p.id}>
+								<a
+									href={`/projects/${p.slug}`}
+									className="group flex items-center gap-3 rounded-[6px] border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 transition-colors hover:border-amber-500/50"
+								>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-medium text-text-primary transition-colors group-hover:text-accent">
+											{p.title}
+										</p>
+										<p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-amber-300">
+											{p.role}
+										</p>
+									</div>
+									<ChevronRight
+										className="size-3.5 text-text-muted transition-transform group-hover:translate-x-0.5"
+										aria-hidden
+									/>
+								</a>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+
+			{interested.length > 0 && (
+				<div className="mt-4">
+					<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+						Volunteered ({interested.length})
+					</p>
+					<ul className="mt-2 space-y-2">
+						{interested.slice(0, 4).map((p) => (
+							<li key={p.id}>
+								<a
+									href={`/projects/${p.slug}`}
+									className="group flex items-center gap-3 rounded-[6px] border border-border bg-background/40 px-3 py-2.5 transition-colors hover:border-border-hover"
+								>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-medium text-text-primary transition-colors group-hover:text-accent">
+											{p.title}
+										</p>
+										<div className="mt-0.5 flex items-center gap-3 text-[11px] font-mono text-text-muted">
+											<span>{p.interestCount} volunteers</span>
+											<span className="inline-flex items-center gap-1">
+												<MessageSquare className="size-3" aria-hidden />
+												{p.commentCount}
+											</span>
+										</div>
+									</div>
+									<ChevronRight
+										className="size-3.5 text-text-muted transition-transform group-hover:translate-x-0.5"
+										aria-hidden
+									/>
+								</a>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
 		</div>
 	);
 }

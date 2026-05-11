@@ -1,0 +1,15 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import AdminProjectDetailIsland from "@/components/react/islands/AdminProjectDetailIsland";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) {
+	return Astro.redirect("/admin/projects");
+}
+---
+
+<AdminLayout title="Project" active="projects">
+	<AdminProjectDetailIsland client:only="react" slug={slug} />
+</AdminLayout>

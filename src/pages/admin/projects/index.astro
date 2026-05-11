@@ -1,0 +1,10 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import AdminProjectsIsland from "@/components/react/islands/AdminProjectsIsland";
+
+export const prerender = false;
+---
+
+<AdminLayout title="Projects" active="projects">
+	<AdminProjectsIsland client:only="react" />
+</AdminLayout>

@@ -1,0 +1,16 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProjectsListIsland from "@/components/react/islands/ProjectsListIsland";
+
+export const prerender = false;
+---
+
+<BaseLayout
+	title="Projects"
+	description="Community-shaped projects we're building together  open for ideas, picked monthly, shipped in public."
+	ogImage="/api/og.png?page=projects"
+>
+	<section class="mx-auto max-w-5xl px-4 sm:px-6 py-16 md:py-20">
+		<ProjectsListIsland client:only="react" />
+	</section>
+</BaseLayout>

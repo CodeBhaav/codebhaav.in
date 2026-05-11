@@ -1,6 +1,11 @@
 import { AdminMobileNav, AdminSidebar } from "../admin/AdminSidebar";
 
-type NavKey = "overview" | "waitlist" | "founding-members";
+type NavKey =
+	| "overview"
+	| "waitlist"
+	| "founding-members"
+	| "ideas"
+	| "projects";
 
 export default function AdminSidebarIsland({
 	active,

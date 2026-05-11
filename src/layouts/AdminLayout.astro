@@ -9,7 +9,12 @@ import AdminSidebarIsland from "@/components/react/islands/AdminSidebarIsland";
 
 interface Props {
 	title: string;
-	active: "overview" | "waitlist" | "founding-members";
+	active:
+		| "overview"
+		| "waitlist"
+		| "founding-members"
+		| "ideas"
+		| "projects";
 }
 
 const { title, active } = Astro.props;

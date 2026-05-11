@@ -1,0 +1,17 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ProjectDetailIsland from "@/components/react/islands/ProjectDetailIsland";
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+if (!slug) {
+	return Astro.redirect("/projects");
+}
+---
+
+<BaseLayout title="Project">
+	<section class="mx-auto max-w-3xl px-4 sm:px-6 py-16 md:py-20">
+		<ProjectDetailIsland client:only="react" slug={slug} />
+	</section>
+</BaseLayout>

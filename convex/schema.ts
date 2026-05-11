@@ -95,4 +95,105 @@ export default defineSchema({
 		resendId: v.string(),
 		updatedAt: v.number(),
 	}).index("by_kind_slug", ["kind", "slug"]),
+
+	/* ─── Project ideas (Reddit-style submission, community-voted) ──── */
+
+	projectIdea: defineTable({
+		title: v.string(),
+		description: v.string(),
+		submitterClerkUserId: v.string(),
+		submitterEmail: v.string(),
+		submitterName: v.string(),
+		upvoteCount: v.number(),
+		commentCount: v.number(),
+		status: v.union(
+			v.literal("open"),
+			v.literal("promoted"),
+			v.literal("rejected"),
+		),
+		rejectedReason: v.optional(v.string()),
+		promotedToProjectId: v.optional(v.id("project")),
+	})
+		.index("by_status", ["status"])
+		.index("by_submitter", ["submitterClerkUserId"])
+		.index("by_upvoteCount", ["upvoteCount"]),
+
+	projectIdeaVote: defineTable({
+		ideaId: v.id("projectIdea"),
+		clerkUserId: v.string(),
+	})
+		.index("by_idea_user", ["ideaId", "clerkUserId"])
+		.index("by_user", ["clerkUserId"]),
+
+	ideaComment: defineTable({
+		ideaId: v.id("projectIdea"),
+		clerkUserId: v.string(),
+		authorName: v.string(),
+		body: v.string(),
+	}).index("by_idea", ["ideaId"]),
+
+	/* ─── Projects (curated, promoted from ideas by the admin) ──────── */
+
+	project: defineTable({
+		title: v.string(),
+		description: v.string(),
+		techStack: v.array(v.string()),
+		slug: v.string(),
+		status: v.union(
+			v.literal("open"),
+			v.literal("building"),
+			v.literal("shipped"),
+		),
+		// Credit back to the originator  preserves the social loop.
+		originatingIdeaId: v.optional(v.id("projectIdea")),
+		originatorClerkUserId: v.optional(v.string()),
+		originatorName: v.optional(v.string()),
+		// Denormalized counters for cheap sorting on the public listing.
+		interestCount: v.number(),
+		commentCount: v.number(),
+		buildStartedAt: v.optional(v.number()),
+		shippedAt: v.optional(v.number()),
+	})
+		.index("by_slug", ["slug"])
+		.index("by_status", ["status"])
+		.index("by_interestCount", ["interestCount"]),
+
+	/**
+	 * "I wanna build this" signal. One row per (project, user). Cached
+	 * email/name so the admin can reach volunteers off-platform when
+	 * picking the build team for the month.
+	 */
+	projectInterest: defineTable({
+		projectId: v.id("project"),
+		clerkUserId: v.string(),
+		userName: v.string(),
+		userEmail: v.string(),
+	})
+		.index("by_project_user", ["projectId", "clerkUserId"])
+		.index("by_project", ["projectId"])
+		.index("by_user", ["clerkUserId"]),
+
+	projectComment: defineTable({
+		projectId: v.id("project"),
+		clerkUserId: v.string(),
+		authorName: v.string(),
+		body: v.string(),
+	}).index("by_project", ["projectId"]),
+
+	/**
+	 * Build team membership  one row per (project, user) when admin
+	 * commits a volunteer to the build. `role` is free text the admin
+	 * fills in ("Team Manager", "Backend", "Designer", etc.).
+	 */
+	projectBuildTeamMember: defineTable({
+		projectId: v.id("project"),
+		clerkUserId: v.string(),
+		userName: v.string(),
+		userEmail: v.string(),
+		role: v.string(),
+		addedByClerkUserId: v.string(),
+	})
+		.index("by_project_user", ["projectId", "clerkUserId"])
+		.index("by_project", ["projectId"])
+		.index("by_user", ["clerkUserId"]),
 });
