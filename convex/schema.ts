@@ -69,12 +69,14 @@ export default defineSchema({
 		// goes through the multi-toggle settings page. Kept for backfill.
 		newsletter: v.optional(v.boolean()),
 		// Per-topic subscription state, keyed by TopicSlug
-		// (community_updates | product_announcements | event_invitations | founders_only).
+		// (community_updates | product_announcements | event_invitations |
+		//  activity_updates | founders_only).
 		topics: v.optional(
 			v.object({
 				community_updates: v.optional(v.boolean()),
 				product_announcements: v.optional(v.boolean()),
 				event_invitations: v.optional(v.boolean()),
+				activity_updates: v.optional(v.boolean()),
 				founders_only: v.optional(v.boolean()),
 			}),
 		),
@@ -246,4 +248,37 @@ export default defineSchema({
 		.index("by_project_user", ["projectId", "clerkUserId"])
 		.index("by_project", ["projectId"])
 		.index("by_user", ["clerkUserId"]),
+
+	/**
+	 * In-app inbox row  one per (recipient, event). Written inline by
+	 * every mutation that creates a relevant event so the recipient sees
+	 * it on their next query. `payload` is event-specific (typed by `kind`)
+	 * and intentionally schemaless to keep this table easy to evolve.
+	 */
+	notification: defineTable({
+		recipientClerkUserId: v.string(),
+		kind: v.union(
+			v.literal("mention_in_comment"),
+			v.literal("reply_to_my_comment"),
+			v.literal("idea_status_changed"),
+			v.literal("project_status_changed"),
+			v.literal("added_to_build_team"),
+			v.literal("team_lead_assigned"),
+		),
+		// Free-form payload keyed by `kind`. Conventions per kind:
+		//   mention_in_comment / reply_to_my_comment:
+		//     { actorName, actorUsername?, surface: "idea"|"project",
+		//       targetId, targetTitle, targetUrl, snippet }
+		//   idea_status_changed:
+		//     { ideaTitle, status, targetUrl, reason? }
+		//   project_status_changed:
+		//     { projectTitle, status, slug, targetUrl }
+		//   added_to_build_team / team_lead_assigned:
+		//     { projectTitle, slug, role?, actorName }
+		payload: v.any(),
+		read: v.boolean(),
+		readAt: v.optional(v.number()),
+	})
+		.index("by_recipient", ["recipientClerkUserId"])
+		.index("by_recipient_unread", ["recipientClerkUserId", "read"]),
 });

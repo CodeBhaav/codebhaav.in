@@ -5,6 +5,7 @@ import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
+import { enqueueNotification } from "./notifications";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_IDEAS_PER_DAY = 5;
@@ -447,10 +448,11 @@ export const commentOnIdea = mutation({
 		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
 		const authorUsername = readableUsername(identity);
+		const actorName = readableName(identity);
 		const id = await ctx.db.insert("ideaComment", {
 			ideaId: args.ideaId,
 			clerkUserId: identity.subject,
-			authorName: readableName(identity),
+			authorName: actorName,
 			...(authorUsername ? { authorUsername } : {}),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
@@ -460,6 +462,53 @@ export const commentOnIdea = mutation({
 		await ctx.db.patch(args.ideaId, {
 			commentCount: idea.commentCount + 1,
 		});
+
+		// Notifications  one for each mention recipient (deduped by clerkUserId),
+		// plus one for the parent author (reply). Self-mute is in enqueueNotification.
+		const snippet = body.length > 160 ? `${body.slice(0, 157)}…` : body;
+		const targetUrl = `/ideas/${args.ideaId}`;
+		const notifiedRecipients = new Set<string>();
+		for (const m of finalMentions) {
+			if (notifiedRecipients.has(m.clerkUserId)) continue;
+			notifiedRecipients.add(m.clerkUserId);
+			await enqueueNotification(ctx, {
+				recipientClerkUserId: m.clerkUserId,
+				actorClerkUserId: identity.subject,
+				kind: "mention_in_comment",
+				payload: {
+					actorName,
+					actorUsername: authorUsername,
+					surface: "idea",
+					targetId: args.ideaId,
+					targetTitle: idea.title,
+					targetUrl,
+					snippet,
+				},
+			});
+		}
+		if (args.parentId) {
+			const parent = await ctx.db.get(args.parentId);
+			if (
+				parent &&
+				parent.clerkUserId &&
+				!notifiedRecipients.has(parent.clerkUserId)
+			) {
+				await enqueueNotification(ctx, {
+					recipientClerkUserId: parent.clerkUserId,
+					actorClerkUserId: identity.subject,
+					kind: "reply_to_my_comment",
+					payload: {
+						actorName,
+						actorUsername: authorUsername,
+						surface: "idea",
+						targetId: args.ideaId,
+						targetTitle: idea.title,
+						targetUrl,
+						snippet,
+					},
+				});
+			}
+		}
 
 		return { id };
 	},
@@ -543,12 +592,24 @@ export const rejectIdea = mutation({
 		reason: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
+		const admin = await requireAdmin(ctx);
 		const idea = await ctx.db.get(args.ideaId);
 		if (!idea) throw new Error("Idea not found");
+		const reason = args.reason?.trim() || undefined;
 		await ctx.db.patch(args.ideaId, {
 			status: "rejected",
-			rejectedReason: args.reason?.trim() || undefined,
+			rejectedReason: reason,
+		});
+		await enqueueNotification(ctx, {
+			recipientClerkUserId: idea.submitterClerkUserId,
+			actorClerkUserId: admin.subject,
+			kind: "idea_status_changed",
+			payload: {
+				status: "rejected",
+				ideaTitle: idea.title,
+				targetUrl: `/ideas/${args.ideaId}`,
+				reason,
+			},
 		});
 		return { ok: true };
 	},
@@ -557,7 +618,7 @@ export const rejectIdea = mutation({
 export const reopenIdea = mutation({
 	args: { ideaId: v.id("projectIdea") },
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
+		const admin = await requireAdmin(ctx);
 		const idea = await ctx.db.get(args.ideaId);
 		if (!idea) throw new Error("Idea not found");
 		if (idea.status === "promoted") {
@@ -568,6 +629,16 @@ export const reopenIdea = mutation({
 		await ctx.db.patch(args.ideaId, {
 			status: "open",
 			rejectedReason: undefined,
+		});
+		await enqueueNotification(ctx, {
+			recipientClerkUserId: idea.submitterClerkUserId,
+			actorClerkUserId: admin.subject,
+			kind: "idea_status_changed",
+			payload: {
+				status: "open",
+				ideaTitle: idea.title,
+				targetUrl: `/ideas/${args.ideaId}`,
+			},
 		});
 		return { ok: true };
 	},
@@ -587,7 +658,7 @@ export const promoteIdeaToProject = mutation({
 		techStack: v.array(v.string()),
 	},
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
+		const admin = await requireAdmin(ctx);
 		const idea = await ctx.db.get(args.ideaId);
 		if (!idea) throw new Error("Idea not found");
 		if (idea.status !== "open") {
@@ -629,6 +700,19 @@ export const promoteIdeaToProject = mutation({
 		await ctx.db.patch(args.ideaId, {
 			status: "promoted",
 			promotedToProjectId: projectId,
+		});
+
+		await enqueueNotification(ctx, {
+			recipientClerkUserId: idea.submitterClerkUserId,
+			actorClerkUserId: admin.subject,
+			kind: "idea_status_changed",
+			payload: {
+				status: "promoted",
+				ideaTitle: idea.title,
+				targetUrl: `/projects/${slug}`,
+				projectTitle: title,
+				slug,
+			},
 		});
 
 		return { projectId, slug };

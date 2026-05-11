@@ -88,7 +88,7 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 ---
 
-### 3. Notifications ⬜
+### 3. Notifications ✅
 
 **Scope:** in-app inbox + opt-in email digest.
 
@@ -126,6 +126,18 @@ Status legend: ⬜ pending · 🟦 in progress · ✅ done
 
 #### Resend changes (1 new topic)
 - Add `activity_updates` to `convex/resendResources.ts` with `default_subscription: "opt_in"`, `visibility: "public"`. Run `bootstrapResendResources` again to create it. Updates user toggle UI automatically.
+
+### Notes / decisions
+- Bell lives inside the navbar React tree via a new `rightSlot` prop on the `Navbar` component. `NavbarIsland` now wraps in `<Providers>` only when signed-in — anonymous prerendered pages keep the auth-free navbar (zero Clerk script). Multiple ClerkProviders on a page coexist as long as the publishableKey matches (Clerk warns in console but functions normally).
+- `enqueueNotification` is a shared helper in `convex/notifications.ts` with built-in self-mute (`actor === recipient` → no-op). All trigger sites import it.
+- Bell dropdown uses `listRecentNotifications` (take(10), no pagination); the inbox page uses `listMyNotifications` (paginated, 30/page). Two queries to keep the bell payload tiny.
+- `notification.payload` is intentionally `v.any()` — kind-specific schemas would explode the validator and we already have a typed format layer (`NotificationFormat.ts`) on the client that interprets it. Reasonable tradeoff: less DB-side type safety, simpler evolution.
+- Digest cron at `30 3 * * *` (UTC) = 09:00 IST. Pulls all unread notifications from the last 24h; one email per opted-in recipient.
+- Recipients on `project_status_changed`: build team + interested volunteers + originator. On `flipProjectStatus`, only triggers if the status actually changed (no-op patches don't notify).
+- `mention_in_comment` deduplicates against `reply_to_my_comment` — if you both mention and reply to someone, they get only the mention (it's the more specific signal).
+- Settings page picks up `activity_updates` automatically through the existing per-topic switch UI. New Activity icon from lucide.
+- Inbox auto-marks first-page items as read after a 1.2s delay (gives the user time to see the unread dot animate in before it disappears).
+- `bootstrapResendResources` re-run on both dev (`watchful-gull-526`) and prod (`savory-lobster-743`) after deploy — creates the new `Activity Updates` topic in Resend.
 
 ---
 

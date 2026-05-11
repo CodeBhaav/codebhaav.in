@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser, UserButton } from "@clerk/clerk-react";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowLeft, BellRing, Calendar, Crown, Megaphone } from "lucide-react";
+import { Activity, ArrowLeft, BellRing, Calendar, Crown, Megaphone } from "lucide-react";
 import posthog from "posthog-js";
 import { api } from "../../../../convex/_generated/api";
 import { TOPICS, type TopicSlug } from "../../../../convex/resendResources";
@@ -13,6 +13,7 @@ const TOPIC_ICON: Record<TopicSlug, React.ComponentType<{ className?: string }>>
 	community_updates: BellRing,
 	product_announcements: Megaphone,
 	event_invitations: Calendar,
+	activity_updates: Activity,
 	founders_only: Crown,
 };
 

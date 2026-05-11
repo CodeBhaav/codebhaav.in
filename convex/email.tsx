@@ -17,6 +17,7 @@ import { AccountWelcomeEmail } from "./emails/AccountWelcomeEmail";
 import { ApplicationAcceptedEmail } from "./emails/ApplicationAcceptedEmail";
 import { ApplicationRejectedEmail } from "./emails/ApplicationRejectedEmail";
 import { FoundingMemberEmail } from "./emails/FoundingMemberEmail";
+import { NotificationDigestEmail } from "./emails/NotificationDigestEmail";
 import { TestEmail } from "./emails/TestEmail";
 import { WaitlistEmail } from "./emails/WaitlistEmail";
 
@@ -58,6 +59,7 @@ const topicsValidator = v.object({
 	community_updates: v.optional(v.boolean()),
 	product_announcements: v.optional(v.boolean()),
 	event_invitations: v.optional(v.boolean()),
+	activity_updates: v.optional(v.boolean()),
 	founders_only: v.optional(v.boolean()),
 });
 
@@ -493,6 +495,180 @@ export const sendAccountWelcomeEmail = internalAction({
 				`Resend error: ${result.error.name} — ${result.error.message}`,
 			);
 		}
+	},
+});
+
+/* ─── Daily notification digest ─────────────────────────────────────── */
+
+interface DigestItem {
+	title: string;
+	body: string;
+	targetUrl: string;
+}
+
+function digestItemFor(n: {
+	kind: string;
+	payload: Record<string, unknown>;
+}): DigestItem | null {
+	const p = n.payload;
+	const url = typeof p.targetUrl === "string" ? p.targetUrl : "/dashboard";
+	const actor =
+		typeof p.actorName === "string" ? p.actorName : "Someone";
+	const target =
+		typeof p.targetTitle === "string" ? p.targetTitle : undefined;
+	switch (n.kind) {
+		case "mention_in_comment":
+			return {
+				title: `${actor} mentioned you${target ? ` on "${target}"` : ""}`,
+				body: typeof p.snippet === "string" ? p.snippet : "Tap to read more.",
+				targetUrl: url,
+			};
+		case "reply_to_my_comment":
+			return {
+				title: `${actor} replied to you${target ? ` on "${target}"` : ""}`,
+				body: typeof p.snippet === "string" ? p.snippet : "Tap to read the reply.",
+				targetUrl: url,
+			};
+		case "idea_status_changed": {
+			const status = typeof p.status === "string" ? p.status : "updated";
+			const title = typeof p.ideaTitle === "string" ? p.ideaTitle : "Your idea";
+			if (status === "promoted") {
+				return {
+					title: `"${title}" is now a project`,
+					body:
+						typeof p.projectTitle === "string"
+							? `Live as "${p.projectTitle}". The community can volunteer to build it.`
+							: "It's live. The community can volunteer to build it.",
+					targetUrl: url,
+				};
+			}
+			if (status === "rejected") {
+				return {
+					title: `"${title}" was closed`,
+					body:
+						typeof p.reason === "string" && p.reason
+							? `Reason: ${p.reason}`
+							: "An admin closed this idea. You can submit a refined version.",
+					targetUrl: url,
+				};
+			}
+			return {
+				title: `"${title}" status updated`,
+				body: `Now ${status}.`,
+				targetUrl: url,
+			};
+		}
+		case "project_status_changed": {
+			const status = typeof p.status === "string" ? p.status : "updated";
+			const title =
+				typeof p.projectTitle === "string" ? p.projectTitle : "A project";
+			return {
+				title: `"${title}" → ${status}`,
+				body:
+					status === "shipped"
+						? "Shipped. Time to celebrate."
+						: status === "building"
+							? "The team is assembled and building."
+							: "Status changed.",
+				targetUrl: url,
+			};
+		}
+		case "added_to_build_team": {
+			const title =
+				typeof p.projectTitle === "string" ? p.projectTitle : "a project";
+			const role = typeof p.role === "string" ? p.role : "team member";
+			return {
+				title: `You're on the build team for "${title}"`,
+				body: `Role: ${role}. Open the project to coordinate next steps.`,
+				targetUrl: url,
+			};
+		}
+		case "team_lead_assigned": {
+			const title =
+				typeof p.projectTitle === "string" ? p.projectTitle : "a project";
+			return {
+				title: `You're the team lead for "${title}"`,
+				body: "You can now edit the stack, manage the team, and ship the project.",
+				targetUrl: url,
+			};
+		}
+		default:
+			return null;
+	}
+}
+
+interface DigestBucket {
+	recipientClerkUserId: string;
+	email: string;
+	name: string;
+	activitySubscribed: boolean;
+	notifications: Array<{
+		kind: string;
+		payload: Record<string, unknown>;
+		createdAt: number;
+	}>;
+}
+
+/**
+ * Daily digest cron. Pulls unread notifications from the last 24h,
+ * groups by recipient, filters by activity_updates topic opt-in, sends
+ * one email per recipient. Failures per-recipient don't block the rest.
+ */
+export const sendDailyNotificationDigest = internalAction({
+	args: {},
+	handler: async (
+		ctx,
+	): Promise<{ sent: number; skipped: number; totalBuckets: number }> => {
+		const DAY_MS = 24 * 60 * 60 * 1000;
+		const sinceMs = Date.now() - DAY_MS;
+		const buckets: DigestBucket[] = await ctx.runQuery(
+			internal.notifications.collectUnreadForDigest,
+			{ sinceMs },
+		);
+		let sent = 0;
+		let skipped = 0;
+		for (const b of buckets) {
+			if (!b.activitySubscribed) {
+				skipped += 1;
+				continue;
+			}
+			const items = b.notifications
+				.map((n) => digestItemFor(n))
+				.filter((i: DigestItem | null): i is DigestItem => i !== null)
+				.slice(0, 10);
+			if (items.length === 0) {
+				skipped += 1;
+				continue;
+			}
+			try {
+				const result = await getResend().emails.send({
+					from: FROM,
+					to: b.email,
+					subject:
+						items.length === 1
+							? `New on CodeBhaav: ${items[0].title}`
+							: `${items.length} updates on CodeBhaav`,
+					react: (
+						<NotificationDigestEmail
+							name={b.name}
+							items={items}
+							settingsUrl={`${SITE_URL}/dashboard/settings`}
+							siteUrl={SITE_URL}
+						/>
+					),
+				});
+				if (result.error) {
+					console.error(
+						`Digest send to ${b.email}: ${result.error.name}  ${result.error.message}`,
+					);
+					continue;
+				}
+				sent += 1;
+			} catch (e) {
+				console.error(`Digest send to ${b.email}:`, e);
+			}
+		}
+		return { sent, skipped, totalBuckets: buckets.length };
 	},
 });
 

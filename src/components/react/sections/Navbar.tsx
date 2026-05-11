@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { siteConfig } from "@/lib/site-config";
 import { Button } from "@/components/react/ui/button";
@@ -6,6 +6,12 @@ import { Button } from "@/components/react/ui/button";
 interface NavbarProps {
 	isSignedIn: boolean;
 	isAdmin: boolean;
+	/**
+	 * Optional slot rendered before the CTA in the right-hand cluster.
+	 * Used for the notification bell on signed-in pages. The Navbar itself
+	 * stays auth-free; the slot brings its own Clerk + Convex providers.
+	 */
+	rightSlot?: ReactNode;
 }
 
 function HamburgerButton({
@@ -168,7 +174,7 @@ function MobileNav({
 	);
 }
 
-export function Navbar({ isSignedIn, isAdmin }: NavbarProps) {
+export function Navbar({ isSignedIn, isAdmin, rightSlot }: NavbarProps) {
 	const [isVisible, setIsVisible] = useState(true);
 	const [lastScrollY, setLastScrollY] = useState(0);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -226,6 +232,7 @@ export function Navbar({ isSignedIn, isAdmin }: NavbarProps) {
 					<DesktopNav />
 
 					<div className="flex items-center gap-2">
+						{rightSlot}
 						{isAdmin && (
 							<a
 								href="/admin"

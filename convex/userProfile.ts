@@ -46,6 +46,7 @@ const topicsValidator = v.object({
 	community_updates: v.optional(v.boolean()),
 	product_announcements: v.optional(v.boolean()),
 	event_invitations: v.optional(v.boolean()),
+	activity_updates: v.optional(v.boolean()),
 	founders_only: v.optional(v.boolean()),
 });
 

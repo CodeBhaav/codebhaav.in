@@ -5,6 +5,7 @@ import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import { buildMemberLookup, extractMentionTokens } from "./members";
 import { captureIdentity } from "./userProfile";
+import { enqueueNotification } from "./notifications";
 
 const MAX_COMMENT_LEN = 2000;
 
@@ -471,10 +472,11 @@ export const commentOnProject = mutation({
 		const finalMentions = Array.from(merged.values()).slice(0, 20);
 
 		const authorUsername = readableUsername(identity);
+		const actorName = readableName(identity);
 		const id = await ctx.db.insert("projectComment", {
 			projectId: args.projectId,
 			clerkUserId: identity.subject,
-			authorName: readableName(identity),
+			authorName: actorName,
 			...(authorUsername ? { authorUsername } : {}),
 			body,
 			...(args.parentId ? { parentId: args.parentId } : {}),
@@ -483,6 +485,48 @@ export const commentOnProject = mutation({
 		await ctx.db.patch(args.projectId, {
 			commentCount: project.commentCount + 1,
 		});
+
+		const snippet = body.length > 160 ? `${body.slice(0, 157)}…` : body;
+		const targetUrl = `/projects/${project.slug}`;
+		const notified = new Set<string>();
+		for (const m of finalMentions) {
+			if (notified.has(m.clerkUserId)) continue;
+			notified.add(m.clerkUserId);
+			await enqueueNotification(ctx, {
+				recipientClerkUserId: m.clerkUserId,
+				actorClerkUserId: identity.subject,
+				kind: "mention_in_comment",
+				payload: {
+					actorName,
+					actorUsername: authorUsername,
+					surface: "project",
+					targetId: args.projectId,
+					targetTitle: project.title,
+					targetUrl,
+					snippet,
+				},
+			});
+		}
+		if (args.parentId) {
+			const parent = await ctx.db.get(args.parentId);
+			if (parent && !notified.has(parent.clerkUserId)) {
+				await enqueueNotification(ctx, {
+					recipientClerkUserId: parent.clerkUserId,
+					actorClerkUserId: identity.subject,
+					kind: "reply_to_my_comment",
+					payload: {
+						actorName,
+						actorUsername: authorUsername,
+						surface: "project",
+						targetId: args.projectId,
+						targetTitle: project.title,
+						targetUrl,
+						snippet,
+					},
+				});
+			}
+		}
+
 		return { id };
 	},
 });
@@ -700,6 +744,20 @@ export const setProjectTeamLead = mutation({
 		await ctx.db.patch(args.projectId, {
 			teamLeadClerkUserId: args.clerkUserId,
 		});
+
+		if (project.teamLeadClerkUserId !== args.clerkUserId) {
+			await enqueueNotification(ctx, {
+				recipientClerkUserId: args.clerkUserId,
+				actorClerkUserId: admin.subject,
+				kind: "team_lead_assigned",
+				payload: {
+					projectTitle: project.title,
+					slug: project.slug,
+					targetUrl: `/projects/${project.slug}`,
+					actorName: readableName(admin),
+				},
+			});
+		}
 		return { ok: true };
 	},
 });
@@ -755,6 +813,40 @@ export const flipProjectStatus = mutation({
 			patch.shippedAt = Date.now();
 		}
 		await ctx.db.patch(args.projectId, patch);
+
+		if (args.status !== project.status) {
+			// Notify everyone with skin in the game: build team + volunteers +
+			// originator. Set is implicit via enqueueNotification's self-mute.
+			const recipients = new Set<string>();
+			const teamRows = await ctx.db
+				.query("projectBuildTeamMember")
+				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+				.collect();
+			for (const r of teamRows) recipients.add(r.clerkUserId);
+			const interestRows = await ctx.db
+				.query("projectInterest")
+				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+				.collect();
+			for (const r of interestRows) recipients.add(r.clerkUserId);
+			if (project.originatorClerkUserId) {
+				recipients.add(project.originatorClerkUserId);
+			}
+			const targetUrl = `/projects/${project.slug}`;
+			for (const recipient of recipients) {
+				await enqueueNotification(ctx, {
+					recipientClerkUserId: recipient,
+					actorClerkUserId: perms.identity.subject || undefined,
+					kind: "project_status_changed",
+					payload: {
+						projectTitle: project.title,
+						slug: project.slug,
+						status: args.status,
+						targetUrl,
+					},
+				});
+			}
+		}
+
 		return { ok: true };
 	},
 });
@@ -811,6 +903,19 @@ export const addBuildTeamMember = mutation({
 			userEmail,
 			role,
 			addedByClerkUserId: actor.subject,
+		});
+
+		await enqueueNotification(ctx, {
+			recipientClerkUserId: args.clerkUserId,
+			actorClerkUserId: actor.subject,
+			kind: "added_to_build_team",
+			payload: {
+				projectTitle: project.title,
+				slug: project.slug,
+				role,
+				targetUrl: `/projects/${project.slug}`,
+				actorName: readableName(actor),
+			},
 		});
 		return { id, updated: false };
 	},

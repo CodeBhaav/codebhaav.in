@@ -13,6 +13,7 @@ export type TopicSlug =
 	| "community_updates"
 	| "product_announcements"
 	| "event_invitations"
+	| "activity_updates"
 	| "founders_only";
 
 export type SegmentSlug =
@@ -60,6 +61,14 @@ export const TOPICS: Record<TopicSlug, TopicDef> = {
 		default_subscription: "opt_out",
 		visibility: "public",
 	},
+	activity_updates: {
+		slug: "activity_updates",
+		name: "Activity Updates",
+		description:
+			"Daily digest of your mentions, replies, and project updates  so you don't miss anything between sessions.",
+		default_subscription: "opt_in",
+		visibility: "public",
+	},
 	founders_only: {
 		slug: "founders_only",
 		name: "Founders Only",
@@ -75,6 +84,7 @@ export const PUBLIC_TOPICS: TopicSlug[] = [
 	"community_updates",
 	"product_announcements",
 	"event_invitations",
+	"activity_updates",
 ];
 
 /** Default subscription state for someone newly opted-in via a form. */

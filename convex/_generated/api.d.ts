@@ -9,17 +9,20 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as crons from "../crons.js";
 import type * as email from "../email.js";
 import type * as emails_AccountWelcomeEmail from "../emails/AccountWelcomeEmail.js";
 import type * as emails_ApplicationAcceptedEmail from "../emails/ApplicationAcceptedEmail.js";
 import type * as emails_ApplicationRejectedEmail from "../emails/ApplicationRejectedEmail.js";
 import type * as emails_FoundingMemberEmail from "../emails/FoundingMemberEmail.js";
 import type * as emails_Layout from "../emails/Layout.js";
+import type * as emails_NotificationDigestEmail from "../emails/NotificationDigestEmail.js";
 import type * as emails_TestEmail from "../emails/TestEmail.js";
 import type * as emails_WaitlistEmail from "../emails/WaitlistEmail.js";
 import type * as foundingMember from "../foundingMember.js";
 import type * as http from "../http.js";
 import type * as members from "../members.js";
+import type * as notifications from "../notifications.js";
 import type * as profiles from "../profiles.js";
 import type * as projectIdeas from "../projectIdeas.js";
 import type * as projects from "../projects.js";
@@ -36,17 +39,20 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  crons: typeof crons;
   email: typeof email;
   "emails/AccountWelcomeEmail": typeof emails_AccountWelcomeEmail;
   "emails/ApplicationAcceptedEmail": typeof emails_ApplicationAcceptedEmail;
   "emails/ApplicationRejectedEmail": typeof emails_ApplicationRejectedEmail;
   "emails/FoundingMemberEmail": typeof emails_FoundingMemberEmail;
   "emails/Layout": typeof emails_Layout;
+  "emails/NotificationDigestEmail": typeof emails_NotificationDigestEmail;
   "emails/TestEmail": typeof emails_TestEmail;
   "emails/WaitlistEmail": typeof emails_WaitlistEmail;
   foundingMember: typeof foundingMember;
   http: typeof http;
   members: typeof members;
+  notifications: typeof notifications;
   profiles: typeof profiles;
   projectIdeas: typeof projectIdeas;
   projects: typeof projects;

@@ -131,6 +131,7 @@ export function Dashboard() {
 						label="View Application"
 					/>
 				)}
+				<QuickLink href="/dashboard/notifications" label="Inbox" />
 				<QuickLink href="/dashboard/settings" label="Notification Settings" />
 			</div>
 		</div>

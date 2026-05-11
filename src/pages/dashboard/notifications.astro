@@ -1,0 +1,12 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import NotificationInboxIsland from "@/components/react/islands/NotificationInboxIsland";
+
+export const prerender = false;
+---
+
+<BaseLayout title="Notifications">
+	<section class="mx-auto max-w-3xl px-4 sm:px-6 py-16 md:py-24">
+		<NotificationInboxIsland client:only="react" />
+	</section>
+</BaseLayout>
