@@ -41,6 +41,53 @@ function readableUsername(id: ClerkIdentity): string | undefined {
 	return u && u.length > 0 ? u : undefined;
 }
 
+interface ProjectPermissions {
+	identity: ClerkIdentity;
+	isAdmin: boolean;
+	isTeamLead: boolean;
+	canManage: boolean;
+}
+
+/**
+ * Resolve who's acting on a project. Admin can do anything; the project's
+ * teamLeadClerkUserId can manage that one project (tech stack, build team,
+ * status->shipped). Use `requireProjectManager` to throw at mutation entry
+ * points; use the returned booleans to gate response fields.
+ */
+async function getProjectPermissions(
+	ctx: QueryCtx | MutationCtx,
+	project: Doc<"project">,
+): Promise<ProjectPermissions> {
+	const identity = (await ctx.auth.getUserIdentity()) as
+		| ClerkIdentity
+		| null;
+	const isAdmin = identity?.metadata?.role === "admin";
+	const isTeamLead = !!(
+		identity && project.teamLeadClerkUserId === identity.subject
+	);
+	return {
+		identity: (identity ?? {
+			subject: "",
+		}) as ClerkIdentity,
+		isAdmin,
+		isTeamLead,
+		canManage: isAdmin || isTeamLead,
+	};
+}
+
+async function requireProjectManager(
+	ctx: MutationCtx,
+	projectId: Id<"project">,
+): Promise<{ project: Doc<"project">; perms: ProjectPermissions }> {
+	const project = await ctx.db.get(projectId);
+	if (!project) throw new Error("Project not found");
+	const perms = await getProjectPermissions(ctx, project);
+	if (!perms.canManage) {
+		throw new Error("Only the team lead or an admin can manage this project");
+	}
+	return { project, perms };
+}
+
 /* ─── Public reads ───────────────────────────────────────────────────── */
 
 export const listProjects = query({
@@ -152,6 +199,35 @@ export const getProjectBySlug = query({
 			.collect();
 		teamRows.sort((a, b) => a._creationTime - b._creationTime);
 
+		const perms = await getProjectPermissions(ctx, project);
+
+		// Volunteers list  visible to admin + team lead only (it's a private
+		// pool used to assemble the team, not a public roster).
+		let volunteers:
+			| Array<{
+					clerkUserId: string;
+					userName: string;
+					userEmail: string;
+					interestedAt: number;
+					onTeam: boolean;
+			  }>
+			| null = null;
+		if (perms.canManage) {
+			const rows = await ctx.db
+				.query("projectInterest")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.collect();
+			const teamUserIds = new Set(teamRows.map((m) => m.clerkUserId));
+			rows.sort((a, b) => a._creationTime - b._creationTime);
+			volunteers = rows.map((v) => ({
+				clerkUserId: v.clerkUserId,
+				userName: v.userName,
+				userEmail: v.userEmail,
+				interestedAt: v._creationTime,
+				onTeam: teamUserIds.has(v.clerkUserId),
+			}));
+		}
+
 		return {
 			id: project._id,
 			slug: project.slug,
@@ -163,16 +239,22 @@ export const getProjectBySlug = query({
 			commentCount: project.commentCount,
 			originatorName: project.originatorName ?? null,
 			originatingIdeaId: project.originatingIdeaId ?? null,
+			teamLeadClerkUserId: project.teamLeadClerkUserId ?? null,
 			createdAt: project._creationTime,
 			buildStartedAt: project.buildStartedAt ?? null,
 			shippedAt: project.shippedAt ?? null,
 			youInterested,
+			youAreTeamLead: perms.isTeamLead,
+			youAreAdmin: perms.isAdmin,
 			team: teamRows.map((t) => ({
+				id: t._id,
 				clerkUserId: t.clerkUserId,
 				userName: t.userName,
+				userEmail: t.userEmail,
 				role: t.role,
 				addedAt: t._creationTime,
 			})),
+			volunteers,
 		};
 	},
 });
@@ -487,6 +569,7 @@ export const getProjectForAdmin = query({
 			originatingIdeaId: project.originatingIdeaId ?? null,
 			interestCount: project.interestCount,
 			commentCount: project.commentCount,
+			teamLeadClerkUserId: project.teamLeadClerkUserId ?? null,
 			createdAt: project._creationTime,
 			buildStartedAt: project.buildStartedAt ?? null,
 			shippedAt: project.shippedAt ?? null,
@@ -519,9 +602,7 @@ export const updateProject = mutation({
 		techStack: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
-		const project = await ctx.db.get(args.projectId);
-		if (!project) throw new Error("Project not found");
+		await requireProjectManager(ctx, args.projectId);
 		const patch: Partial<Doc<"project">> = {};
 		if (args.title !== undefined) {
 			const t = args.title.trim();
@@ -544,6 +625,63 @@ export const updateProject = mutation({
 	},
 });
 
+/**
+ * Assign (or clear) the team lead for a project. Admin only.
+ *
+ * Setting a team lead auto-adds them to the build team with role
+ * "Team Lead" if they aren't already on the team  saves admins a
+ * second step. Pass `clerkUserId: null` to clear.
+ */
+export const setProjectTeamLead = mutation({
+	args: {
+		projectId: v.id("project"),
+		clerkUserId: v.union(v.string(), v.null()),
+	},
+	handler: async (ctx, args) => {
+		const admin = await requireAdmin(ctx);
+		const project = await ctx.db.get(args.projectId);
+		if (!project) throw new Error("Project not found");
+
+		if (args.clerkUserId === null) {
+			await ctx.db.patch(args.projectId, { teamLeadClerkUserId: undefined });
+			return { ok: true };
+		}
+
+		// Find a name/email for the new lead so we can ensure they're on the team.
+		const interest = await ctx.db
+			.query("projectInterest")
+			.withIndex("by_project_user", (q) =>
+				q.eq("projectId", args.projectId).eq("clerkUserId", args.clerkUserId as string),
+			)
+			.first();
+
+		const existingMember = await ctx.db
+			.query("projectBuildTeamMember")
+			.withIndex("by_project_user", (q) =>
+				q
+					.eq("projectId", args.projectId)
+					.eq("clerkUserId", args.clerkUserId as string),
+			)
+			.first();
+
+		if (!existingMember) {
+			await ctx.db.insert("projectBuildTeamMember", {
+				projectId: args.projectId,
+				clerkUserId: args.clerkUserId,
+				userName: interest?.userName ?? "Team Lead",
+				userEmail: interest?.userEmail ?? "",
+				role: "Team Lead",
+				addedByClerkUserId: admin.subject,
+			});
+		}
+
+		await ctx.db.patch(args.projectId, {
+			teamLeadClerkUserId: args.clerkUserId,
+		});
+		return { ok: true };
+	},
+});
+
 export const flipProjectStatus = mutation({
 	args: {
 		projectId: v.id("project"),
@@ -554,9 +692,39 @@ export const flipProjectStatus = mutation({
 		),
 	},
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
 		const project = await ctx.db.get(args.projectId);
 		if (!project) throw new Error("Project not found");
+		const perms = await getProjectPermissions(ctx, project);
+
+		// Permission gating:
+		// - open / building flips: admin only (they're the editorial moves)
+		// - shipped flip: admin OR the project's team lead
+		if (args.status === "shipped") {
+			if (!perms.canManage) {
+				throw new Error("Only the team lead or an admin can ship this project");
+			}
+		} else if (!perms.isAdmin) {
+			throw new Error("Only an admin can change this project's stage");
+		}
+
+		// Building gate  enforce readiness before announcing.
+		if (args.status === "building") {
+			if (project.techStack.length === 0) {
+				throw new Error(
+					"Project can't move to building without a tech stack. Decide on the stack first.",
+				);
+			}
+			const teamCount = await ctx.db
+				.query("projectBuildTeamMember")
+				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+				.collect();
+			if (teamCount.length === 0) {
+				throw new Error(
+					"Project can't move to building without at least one team member.",
+				);
+			}
+		}
+
 		const patch: Partial<Doc<"project">> = { status: args.status };
 		if (args.status === "building" && !project.buildStartedAt) {
 			patch.buildStartedAt = Date.now();
@@ -578,9 +746,11 @@ export const addBuildTeamMember = mutation({
 		role: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const admin = await requireAdmin(ctx);
-		const project = await ctx.db.get(args.projectId);
-		if (!project) throw new Error("Project not found");
+		const { project, perms } = await requireProjectManager(
+			ctx,
+			args.projectId,
+		);
+		const actor = perms.identity;
 
 		const role = args.role.trim();
 		if (!role) throw new Error("Role is required");
@@ -618,7 +788,7 @@ export const addBuildTeamMember = mutation({
 			userName,
 			userEmail,
 			role,
-			addedByClerkUserId: admin.subject,
+			addedByClerkUserId: actor.subject,
 		});
 		return { id, updated: false };
 	},
@@ -630,7 +800,9 @@ export const updateBuildMemberRole = mutation({
 		role: v.string(),
 	},
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
+		const member = await ctx.db.get(args.memberId);
+		if (!member) throw new Error("Team member not found");
+		await requireProjectManager(ctx, member.projectId);
 		const role = args.role.trim();
 		if (!role) throw new Error("Role is required");
 		await ctx.db.patch(args.memberId, { role });
@@ -641,9 +813,14 @@ export const updateBuildMemberRole = mutation({
 export const removeBuildTeamMember = mutation({
 	args: { memberId: v.id("projectBuildTeamMember") },
 	handler: async (ctx, args) => {
-		await requireAdmin(ctx);
-		const exists = await ctx.db.get(args.memberId);
-		if (!exists) throw new Error("Team member not found");
+		const member = await ctx.db.get(args.memberId);
+		if (!member) throw new Error("Team member not found");
+		await requireProjectManager(ctx, member.projectId);
+		// If removing the team lead, also clear the project pointer.
+		const project = await ctx.db.get(member.projectId);
+		if (project?.teamLeadClerkUserId === member.clerkUserId) {
+			await ctx.db.patch(project._id, { teamLeadClerkUserId: undefined });
+		}
 		await ctx.db.delete(args.memberId);
 		return { ok: true };
 	},

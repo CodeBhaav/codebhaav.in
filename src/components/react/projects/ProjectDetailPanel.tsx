@@ -1,11 +1,13 @@
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
-import { ArrowLeft, Lightbulb } from "lucide-react";
+import { ArrowLeft, Calendar, Lightbulb } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { Avatar, formatRelative } from "../admin/AdminOverview";
+import { formatRelative } from "../admin/AdminOverview";
+import { BuildTeamCard } from "./BuildTeamCard";
 import { CommentThread } from "./CommentThread";
 import { InterestButton } from "./InterestButton";
 import { StatusPill } from "./ProjectsListPanel";
+import { TechStackCard } from "./TechStackCard";
 
 interface Props {
 	slug: string;
@@ -27,6 +29,8 @@ export function ProjectDetailPanel({ slug }: Props) {
 	if (project === undefined) return <LoadingState />;
 	if (project === null) return <NotFound />;
 
+	const canManage = project.youAreAdmin || project.youAreTeamLead;
+
 	return (
 		<div className="space-y-6">
 			<a
@@ -37,7 +41,7 @@ export function ProjectDetailPanel({ slug }: Props) {
 				Back to projects
 			</a>
 
-			<article className="rounded-card border border-border bg-card p-6">
+			<header className="rounded-card border border-border bg-card p-6">
 				<div className="flex flex-wrap items-center gap-3">
 					<StatusPill status={project.status} size="md" />
 					{project.originatorName && (
@@ -49,7 +53,8 @@ export function ProjectDetailPanel({ slug }: Props) {
 							</span>
 						</span>
 					)}
-					<span className="font-mono text-[11px] text-text-muted">
+					<span className="inline-flex items-center gap-1 font-mono text-[11px] text-text-muted">
+						<Calendar className="size-3" aria-hidden />
 						{project.status === "shipped" && project.shippedAt
 							? `Shipped ${formatRelative(project.shippedAt)}`
 							: project.status === "building" && project.buildStartedAt
@@ -60,30 +65,10 @@ export function ProjectDetailPanel({ slug }: Props) {
 				<h1 className="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-text-primary leading-tight">
 					{project.title}
 				</h1>
-				<p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed text-text-secondary">
-					{project.description}
-				</p>
-				{project.techStack.length > 0 && (
-					<div className="mt-5">
-						<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-							Tech stack
-						</p>
-						<div className="mt-2 flex flex-wrap gap-1.5">
-							{project.techStack.map((tech) => (
-								<span
-									key={tech}
-									className="inline-flex items-center rounded-[4px] border border-border bg-surface/60 px-2 py-1 font-mono text-[11px] text-text-secondary"
-								>
-									{tech}
-								</span>
-							))}
-						</div>
-					</div>
-				)}
 
 				{project.status !== "shipped" && (
-					<div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-						<p className="text-xs text-text-muted">
+					<div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+						<p className="text-xs text-text-muted max-w-md">
 							{project.status === "building"
 								? "This project is currently being built  the team is set."
 								: "Want to help build this when it's picked? Tap the button to volunteer."}
@@ -100,63 +85,63 @@ export function ProjectDetailPanel({ slug }: Props) {
 						/>
 					</div>
 				)}
-			</article>
+			</header>
 
-			{project.team.length > 0 && (
-				<section className="rounded-card border border-border bg-card p-6">
-					<header>
-						<h2 className="text-base font-semibold tracking-tight text-text-primary">
-							Build team
-						</h2>
-						<p className="mt-0.5 text-xs text-text-muted">
-							The members shipping this together.
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
+				{/* Main column: description + discussion */}
+				<div className="space-y-4 lg:col-span-2 min-w-0">
+					<section className="rounded-card border border-border bg-card p-6">
+						<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
+							About
 						</p>
-					</header>
-					<ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-						{project.team.map((member) => (
-							<li
-								key={member.clerkUserId}
-								className="flex items-center gap-3 rounded-[6px] border border-border bg-background/40 px-3 py-2.5"
-							>
-								<Avatar name={member.userName} size={32} />
-								<div className="min-w-0">
-									<p className="truncate text-sm font-medium text-text-primary">
-										{member.userName}
-									</p>
-									<p className="font-mono text-[10px] uppercase tracking-widest text-text-muted">
-										{member.role}
-									</p>
-								</div>
-							</li>
-						))}
-					</ul>
-				</section>
-			)}
+						<p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-text-secondary">
+							{project.description}
+						</p>
+					</section>
 
-			<section className="rounded-card border border-border bg-card p-6">
-				<CommentThread
-					comments={commentsQuery.results}
-					totalCount={project.commentCount}
-					loadStatus={commentsQuery.status}
-					onLoadMore={() => commentsQuery.loadMore(COMMENTS_PAGE_SIZE)}
-					placeholder="Shape this project  features, scope, concerns, suggestions. Type @ to mention someone."
-					onPost={async ({ body, parentId, mentions }) => {
-						await postComment({
-							projectId: project.id as Id<"project">,
-							body,
-							...(parentId
-								? { parentId: parentId as Id<"projectComment"> }
-								: {}),
-							...(mentions.length > 0 ? { mentions } : {}),
-						});
-					}}
-					onDelete={async (commentId) => {
-						await deleteComment({
-							commentId: commentId as Id<"projectComment">,
-						});
-					}}
-				/>
-			</section>
+					<section className="rounded-card border border-border bg-card p-6">
+						<CommentThread
+							comments={commentsQuery.results}
+							totalCount={project.commentCount}
+							loadStatus={commentsQuery.status}
+							onLoadMore={() => commentsQuery.loadMore(COMMENTS_PAGE_SIZE)}
+							placeholder="Shape this project  features, scope, concerns, suggestions. Type @ to mention someone."
+							onPost={async ({ body, parentId, mentions }) => {
+								await postComment({
+									projectId: project.id as Id<"project">,
+									body,
+									...(parentId
+										? { parentId: parentId as Id<"projectComment"> }
+										: {}),
+									...(mentions.length > 0 ? { mentions } : {}),
+								});
+							}}
+							onDelete={async (commentId) => {
+								await deleteComment({
+									commentId: commentId as Id<"projectComment">,
+								});
+							}}
+						/>
+					</section>
+				</div>
+
+				{/* Sidebar: tech stack + team + status info */}
+				<aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+					<TechStackCard
+						projectId={project.id}
+						techStack={project.techStack}
+						canEdit={canManage}
+					/>
+					<BuildTeamCard
+						projectId={project.id}
+						team={project.team}
+						volunteers={project.volunteers}
+						teamLeadClerkUserId={project.teamLeadClerkUserId}
+						canManage={canManage}
+						isAdmin={project.youAreAdmin}
+					/>
+				</aside>
+			</div>
 		</div>
 	);
 }
@@ -165,8 +150,17 @@ function LoadingState() {
 	return (
 		<div className="space-y-6">
 			<div className="h-3 w-32 animate-pulse rounded-[4px] bg-surface" />
-			<div className="h-72 animate-pulse rounded-card bg-surface" />
 			<div className="h-40 animate-pulse rounded-card bg-surface" />
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
+				<div className="lg:col-span-2 space-y-4">
+					<div className="h-48 animate-pulse rounded-card bg-surface" />
+					<div className="h-64 animate-pulse rounded-card bg-surface" />
+				</div>
+				<div className="space-y-4">
+					<div className="h-36 animate-pulse rounded-card bg-surface" />
+					<div className="h-36 animate-pulse rounded-card bg-surface" />
+				</div>
+			</div>
 		</div>
 	);
 }

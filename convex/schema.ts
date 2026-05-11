@@ -175,10 +175,16 @@ export default defineSchema({
 		commentCount: v.number(),
 		buildStartedAt: v.optional(v.number()),
 		shippedAt: v.optional(v.number()),
+		// Per-project "manager" appointed by an admin. Can edit tech stack,
+		// manage the build team, and flip status to shipped without being
+		// a global admin. Promotion of ideas + assigning the team lead
+		// itself stay admin-only.
+		teamLeadClerkUserId: v.optional(v.string()),
 	})
 		.index("by_slug", ["slug"])
 		.index("by_status", ["status"])
-		.index("by_interestCount", ["interestCount"]),
+		.index("by_interestCount", ["interestCount"])
+		.index("by_teamLead", ["teamLeadClerkUserId"]),
 
 	/**
 	 * "I wanna build this" signal. One row per (project, user). Cached

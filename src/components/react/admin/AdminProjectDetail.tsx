@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import {
 	ArrowLeft,
 	Check,
+	Crown,
 	ExternalLink,
 	Hammer,
 	Plus,
@@ -44,6 +45,7 @@ export function AdminProjectDetail({ slug }: Props) {
 	const addTeamMember = useMutation(api.projects.addBuildTeamMember);
 	const removeTeamMember = useMutation(api.projects.removeBuildTeamMember);
 	const updateRole = useMutation(api.projects.updateBuildMemberRole);
+	const setTeamLead = useMutation(api.projects.setProjectTeamLead);
 
 	const [editing, setEditing] = useState(false);
 	const [draftTitle, setDraftTitle] = useState("");
@@ -396,6 +398,12 @@ export function AdminProjectDetail({ slug }: Props) {
 									<div className="min-w-0 flex-1">
 										<p className="truncate text-sm font-medium text-text-primary">
 											{m.userName}
+											{m.clerkUserId === project.teamLeadClerkUserId && (
+												<span className="ml-2 inline-flex items-center gap-1 rounded-[4px] border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-amber-300">
+													<Crown className="size-2.5" aria-hidden />
+													Lead
+												</span>
+											)}
 										</p>
 										<p className="truncate font-mono text-[11px] text-text-muted">
 											{m.userEmail || "—"}
@@ -406,6 +414,37 @@ export function AdminProjectDetail({ slug }: Props) {
 										disabled={isPending}
 										onCommit={(role) => handleUpdateRole(m.id, role)}
 									/>
+									<button
+										type="button"
+										onClick={async () => {
+											try {
+												await setTeamLead({
+													projectId,
+													clerkUserId:
+														m.clerkUserId === project.teamLeadClerkUserId
+															? null
+															: m.clerkUserId,
+												});
+											} catch (e) {
+												setError(
+													e instanceof Error ? e.message : "Failed",
+												);
+											}
+										}}
+										title={
+											m.clerkUserId === project.teamLeadClerkUserId
+												? "Demote team lead"
+												: "Make team lead"
+										}
+										className={cn(
+											"inline-flex size-8 items-center justify-center rounded-button transition-colors",
+											m.clerkUserId === project.teamLeadClerkUserId
+												? "text-amber-300 hover:bg-amber-500/10"
+												: "text-text-muted hover:bg-amber-500/10 hover:text-amber-300",
+										)}
+									>
+										<Crown className="size-3.5" aria-hidden />
+									</button>
 									<button
 										type="button"
 										onClick={() => handleRemoveMember(m.id)}
