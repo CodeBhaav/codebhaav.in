@@ -13,8 +13,9 @@
 		"dev:e2e": "astro dev --config astro.e2e.config.mjs",
 		"e2e": "playwright test",
 		"e2e:smoke": "playwright test tests/e2e/09-runtime-errors.spec.ts",
+		"e2e:auth": "playwright test tests/e2e/09-runtime-errors.spec.ts tests/e2e/10-signed-in-runtime-errors.spec.ts",
 		"e2e:report": "playwright show-report",
-		"predeploy": "pnpm run build && pnpm run e2e:smoke",
+		"predeploy": "pnpm run build && pnpm run e2e:auth",
 		"email:dev": "email dev --dir convex/emails --port 3010"
 	},
 	"dependencies": {
@@ -47,6 +48,7 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
+		"@clerk/testing": "^2.0.27",
 		"@edge-runtime/vm": "^5.0.0",
 		"@playwright/test": "^1.59.1",
 		"@react-email/ui": "^6.1.1",
