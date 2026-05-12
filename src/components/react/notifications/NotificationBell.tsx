@@ -12,7 +12,37 @@ import {
 	type NotificationRow,
 } from "./NotificationFormat";
 
+/**
+ * Mount-gated wrapper. Astro SSRs every React island on the edge worker,
+ * but the shared `<Providers>` short-circuits to a bare fragment when
+ * `window` is undefined  no ConvexProvider in scope. Calling `useQuery`
+ * in that case throws. Rendering null until `useEffect` runs guarantees
+ * the inner component  and its hooks  only fire on the client.
+ */
 export function NotificationBell() {
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+	if (!mounted) return null;
+	return <NotificationBellInner />;
+}
+
+/**
+ * Fixed-position bell rendered inside `<Providers>` on every signed-in
+ * page. Renders null when the visitor isn't signed in. Sits in the
+ * top-right just inside the navbar area; z-index above the navbar.
+ */
+export function NotificationBellFloating() {
+	const [mounted, setMounted] = useState(false);
+	useEffect(() => setMounted(true), []);
+	if (!mounted) return null;
+	return (
+		<div className="fixed right-3 top-3 z-[55] md:right-[5.25rem] md:top-3.5">
+			<NotificationBellInner />
+		</div>
+	);
+}
+
+function NotificationBellInner() {
 	const { user, isLoaded } = useUser();
 	const [open, setOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);

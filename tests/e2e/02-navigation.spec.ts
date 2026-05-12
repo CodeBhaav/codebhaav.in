@@ -41,16 +41,23 @@ test.describe("Desktop navigation", () => {
 		// Allow React islands to hydrate
 		await page.waitForLoadState("networkidle");
 
-		// Filter out known non-critical noise (e.g. Clerk network calls in dev, Convex ws)
+		// Targeted noise filter. Used to be a blanket "clerk OR convex OR
+		// WebSocket" filter which silently masked the regressions caught by
+		// 09-runtime-errors.spec.ts (Could not find Convex client; multiple
+		// <ClerkProvider>). Keep this allow-list short and specific so any
+		// new clerk/convex error fails the test.
+		const NOISE = [
+			/favicon/i,
+			/Failed to load resource.*posthog/i,
+			/Clerk has been loaded with development keys/i,
+		];
 		const realErrors = consoleErrors.filter(
-			(e) =>
-				!e.includes("clerk") &&
-				!e.includes("Clerk") &&
-				!e.includes("convex") &&
-				!e.includes("WebSocket") &&
-				!e.includes("favicon"),
+			(e) => !NOISE.some((re) => re.test(e)),
 		);
 
-		expect(realErrors, `Unexpected console errors: ${realErrors.join(", ")}`).toHaveLength(0);
+		expect(
+			realErrors,
+			`Unexpected console errors: ${realErrors.join(", ")}`,
+		).toHaveLength(0);
 	});
 });

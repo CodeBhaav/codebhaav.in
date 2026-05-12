@@ -12,7 +12,9 @@
 		"test:watch": "vitest",
 		"dev:e2e": "astro dev --config astro.e2e.config.mjs",
 		"e2e": "playwright test",
+		"e2e:smoke": "playwright test tests/e2e/09-runtime-errors.spec.ts",
 		"e2e:report": "playwright show-report",
+		"predeploy": "pnpm run build && pnpm run e2e:smoke",
 		"email:dev": "email dev --dir convex/emails --port 3010"
 	},
 	"dependencies": {

@@ -3,6 +3,7 @@ import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { NotificationBellFloating } from "../notifications/NotificationBell";
 
 let cachedClient: ConvexReactClient | null = null;
 
@@ -23,23 +24,43 @@ function getConvexClient(): ConvexReactClient | null {
  * ConvexProviderWithClerk forwards the Clerk JWT to Convex so server-side
  * functions can call `ctx.auth.getUserIdentity()` and read role/metadata
  * from verified claims.
+ *
+ * Also renders the floating notification bell since this is the single
+ * ClerkProvider-bearing tree on each page. Pages that explicitly want
+ * no bell (sign-in, sign-up, wizard) pass `chrome={false}`. The bell
+ * itself renders null for signed-out visitors so it's safe by default.
  */
-export function Providers({ children, name }: { children: ReactNode; name?: string }) {
+export function Providers({
+	children,
+	name,
+	chrome = true,
+}: {
+	children: ReactNode;
+	name?: string;
+	chrome?: boolean;
+}) {
 	const client = useMemo(() => getConvexClient(), []);
 	const clerkKey = import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY as string;
 
+	const body = (
+		<>
+			{children}
+			{chrome && <NotificationBellFloating />}
+		</>
+	);
+
 	const inner = client ? (
 		<ConvexProviderWithClerk client={client} useAuth={useAuth}>
-			{children}
+			{body}
 		</ConvexProviderWithClerk>
 	) : (
-		<>{children}</>
+		body
 	);
 
 	const withClerk = clerkKey ? (
 		<ClerkProvider publishableKey={clerkKey}>{inner}</ClerkProvider>
 	) : (
-		<>{children}</>
+		body
 	);
 
 	return <ErrorBoundary name={name}>{withClerk}</ErrorBoundary>;
