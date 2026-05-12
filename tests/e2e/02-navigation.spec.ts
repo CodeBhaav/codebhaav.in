@@ -4,7 +4,7 @@ const NAV_LINKS = [
 	// headingPattern matches against the full text content of the page's <h1>.
 	// Source: PageHeader eyebrow+title+titleAccent props from each page file.
 	{ name: "Mission", href: "/mission", headingPattern: /why we're/i },
-	{ name: "Projects", href: "/projects", headingPattern: /nothing.s shipped yet/i },
+	{ name: "Projects", href: "/projects", headingPattern: /^projects$/i },
 	{ name: "Leaderboard", href: "/leaderboard", headingPattern: /climb the line/i },
 	{ name: "Contact", href: "/contact", headingPattern: /say hello/i },
 ] as const;
