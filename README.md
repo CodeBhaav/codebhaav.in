@@ -4,7 +4,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Made in Amravati](https://img.shields.io/badge/made%20in-Amravati-yellow)](https://en.wikipedia.org/wiki/Amravati)
 
-**CodeBhaav.in** – A self-taught dev’s initiative to build a raw, real, and value-driven tech community.
+**CodeBhaav.in** – A self-taught dev’s initiative to build a raw, real, and value-driven tech community. p
 
 ---
 
